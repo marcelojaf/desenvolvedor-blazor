@@ -27,25 +27,124 @@ namespace VelozientComputers.Infrastructure.Repository
         /// <inheritdoc/>
         public async Task<Computer> GetWithCurrentAssignmentAsync(int id)
         {
-            return await _dbSet
-                .Include(c => c.UserAssignments.Where(a => a.AssignEndDate == null))
-                    .ThenInclude(a => a.User)
-                .Include(c => c.StatusAssignments.OrderByDescending(s => s.AssignDate).Take(1))
-                    .ThenInclude(s => s.Status)
-                .Include(c => c.Manufacturer)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var computers = await (
+                from c in _dbSet
+                where c.Id == id
+                select new Computer
+                {
+                    Id = c.Id,
+                    ComputerManufacturerId = c.ComputerManufacturerId,
+                    SerialNumber = c.SerialNumber,
+                    Specifications = c.Specifications,
+                    ImageUrl = c.ImageUrl,
+                    PurchaseDate = c.PurchaseDate,
+                    WarrantyExpirationDate = c.WarrantyExpirationDate,
+                    CreateDate = c.CreateDate,
+                    Manufacturer = new ComputerManufacturer
+                    {
+                        Id = c.Manufacturer.Id,
+                        Name = c.Manufacturer.Name,
+                        SerialRegex = c.Manufacturer.SerialRegex,
+                        CreateDate = c.Manufacturer.CreateDate
+                    },
+                    UserAssignments = c.UserAssignments
+                        .Where(a => a.AssignEndDate == null)
+                        .Select(a => new ComputerUserAssignment
+                        {
+                            Id = a.Id,
+                            ComputerId = a.ComputerId,
+                            UserId = a.UserId,
+                            AssignStartDate = a.AssignStartDate,
+                            AssignEndDate = a.AssignEndDate,
+                            User = new User
+                            {
+                                Id = a.User.Id,
+                                FirstName = a.User.FirstName,
+                                LastName = a.User.LastName,
+                                EmailAddress = a.User.EmailAddress,
+                                CreateDate = a.User.CreateDate
+                            }
+                        }).ToList(),
+                    StatusAssignments = c.StatusAssignments
+                        .OrderByDescending(s => s.AssignDate)
+                        .Take(1)
+                        .Select(s => new ComputerStatusAssignment
+                        {
+                            Id = s.Id,
+                            ComputerId = s.ComputerId,
+                            ComputerStatusId = s.ComputerStatusId,
+                            AssignDate = s.AssignDate,
+                            Status = new ComputerStatus
+                            {
+                                Id = s.Status.Id,
+                                LocalizedName = s.Status.LocalizedName,
+                                CreateDate = s.Status.CreateDate
+                            }
+                        }).ToList()
+                }).FirstOrDefaultAsync();
+
+            return computers;
         }
 
         /// <inheritdoc/>
         public async Task<IEnumerable<Computer>> GetAllWithCurrentAssignmentsAsync()
         {
-            return await _dbSet
-                .Include(c => c.UserAssignments.Where(a => a.AssignEndDate == null))
-                    .ThenInclude(a => a.User)
-                .Include(c => c.StatusAssignments.OrderByDescending(s => s.AssignDate).Take(1))
-                    .ThenInclude(s => s.Status)
-                .Include(c => c.Manufacturer)
-                .ToListAsync();
+            var computers = await (
+                from c in _dbSet
+                select new Computer
+                {
+                    Id = c.Id,
+                    ComputerManufacturerId = c.ComputerManufacturerId,
+                    SerialNumber = c.SerialNumber,
+                    Specifications = c.Specifications,
+                    ImageUrl = c.ImageUrl,
+                    PurchaseDate = c.PurchaseDate,
+                    WarrantyExpirationDate = c.WarrantyExpirationDate,
+                    CreateDate = c.CreateDate,
+                    Manufacturer = new ComputerManufacturer
+                    {
+                        Id = c.Manufacturer.Id,
+                        Name = c.Manufacturer.Name,
+                        SerialRegex = c.Manufacturer.SerialRegex,
+                        CreateDate = c.Manufacturer.CreateDate
+                    },
+                    UserAssignments = c.UserAssignments
+                        .Where(a => a.AssignEndDate == null)
+                        .Select(a => new ComputerUserAssignment
+                        {
+                            Id = a.Id,
+                            ComputerId = a.ComputerId,
+                            UserId = a.UserId,
+                            AssignStartDate = a.AssignStartDate,
+                            AssignEndDate = a.AssignEndDate,
+                            User = new User
+                            {
+                                Id = a.User.Id,
+                                FirstName = a.User.FirstName,
+                                LastName = a.User.LastName,
+                                EmailAddress = a.User.EmailAddress,
+                                CreateDate = a.User.CreateDate
+                            }
+                        }).ToList(),
+                    StatusAssignments = c.StatusAssignments
+                        .OrderByDescending(s => s.AssignDate)
+                        .Take(1)
+                        .Select(s => new ComputerStatusAssignment
+                        {
+                            Id = s.Id,
+                            ComputerId = s.ComputerId,
+                            ComputerStatusId = s.ComputerStatusId,
+                            AssignDate = s.AssignDate,
+                            Status = new ComputerStatus
+                            {
+                                Id = s.Status.Id,
+                                LocalizedName = s.Status.LocalizedName,
+                                CreateDate = s.Status.CreateDate
+                            }
+                        }).ToList()
+                }).ToListAsync();
+
+            return computers;
         }
 
         #endregion

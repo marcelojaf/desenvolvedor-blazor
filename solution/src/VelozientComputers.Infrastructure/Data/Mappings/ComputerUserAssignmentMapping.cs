@@ -15,8 +15,6 @@ namespace VelozientComputers.Infrastructure.Data.Mappings
         /// <param name="builder">The entity type builder.</param>
         public void Configure(EntityTypeBuilder<ComputerUserAssignment> builder)
         {
-            builder.HasKey(e => e.Id);
-
             builder.Property(e => e.AssignStartDate)
                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
 

@@ -27,21 +27,41 @@ namespace VelozientComputers.Infrastructure.Repository
         /// <inheritdoc/>
         public async Task<User> GetWithCurrentComputersAsync(int id)
         {
-            return await _dbSet
-                .Include(u => u.ComputerAssignments.Where(a => a.AssignEndDate == null))
+            var user = await _dbSet
+                .Include(u => u.ComputerAssignments)
                     .ThenInclude(a => a.Computer)
                         .ThenInclude(c => c.Manufacturer)
                 .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user != null)
+            {
+                // Filter current assignments in memory
+                user.ComputerAssignments = user.ComputerAssignments
+                    .Where(a => a.AssignEndDate == null)
+                    .ToList();
+            }
+
+            return user;
         }
 
         /// <inheritdoc/>
         public async Task<IEnumerable<User>> GetAllWithCurrentComputersAsync()
         {
-            return await _dbSet
-                .Include(u => u.ComputerAssignments.Where(a => a.AssignEndDate == null))
+            var users = await _dbSet
+                .Include(u => u.ComputerAssignments)
                     .ThenInclude(a => a.Computer)
                         .ThenInclude(c => c.Manufacturer)
                 .ToListAsync();
+
+            // Filter assignments in memory for SQLite compatibility
+            foreach (var user in users)
+            {
+                user.ComputerAssignments = user.ComputerAssignments
+                    .Where(a => a.AssignEndDate == null)
+                    .ToList();
+            }
+
+            return users;
         }
 
         #endregion

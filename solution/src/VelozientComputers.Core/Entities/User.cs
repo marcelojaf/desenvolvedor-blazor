@@ -32,6 +32,12 @@ namespace VelozientComputers.Core.Entities
         public string EmailAddress { get; set; }
 
         /// <summary>
+        /// Gets or sets the creation date of the entity.
+        /// </summary>
+        [Column("create_dt")]
+        public DateTime CreateDate { get; set; }
+
+        /// <summary>
         /// Gets or sets the collection of computer assignments for this user.
         /// </summary>
         public virtual ICollection<ComputerUserAssignment> ComputerAssignments { get; set; }

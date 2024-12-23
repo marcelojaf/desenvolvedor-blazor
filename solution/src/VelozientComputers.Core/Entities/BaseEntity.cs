@@ -15,10 +15,6 @@ namespace VelozientComputers.Core.Entities
         [Column("id")]
         public int Id { get; set; }
 
-        /// <summary>
-        /// Gets or sets the creation date of the entity.
-        /// </summary>
-        [Column("create_dt")]
-        public DateTime CreateDate { get; set; }
+
     }
 }

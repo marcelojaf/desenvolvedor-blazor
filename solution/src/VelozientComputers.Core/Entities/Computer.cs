@@ -17,6 +17,12 @@ namespace VelozientComputers.Core.Entities
         public int ComputerManufacturerId { get; set; }
 
         /// <summary>
+        /// Gets or sets the creation date of the entity.
+        /// </summary>
+        [Column("create_dt")]
+        public DateTime CreateDate { get; set; }
+
+        /// <summary>
         /// Gets or sets the manufacturer of the computer.
         /// </summary>
         [ForeignKey("ComputerManufacturerId")]
