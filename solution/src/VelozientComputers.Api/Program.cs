@@ -6,6 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Configure AutoMapper
+builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
+
 // Configure OpenAPI/Swagger
 OpenApiConfig.AddOpenApi(builder.Services);
 
