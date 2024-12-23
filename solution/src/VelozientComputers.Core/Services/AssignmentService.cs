@@ -1,6 +1,6 @@
 using VelozientComputers.Core.Entities;
-using VelozientComputers.Infrastructure.Repository;
-using VelozientComputers.Api.DTOs;
+using VelozientComputers.Core.Interfaces.Repository;
+using VelozientComputers.Core.Interfaces.Service;
 
 namespace VelozientComputers.Core.Services
 {
@@ -34,7 +34,7 @@ namespace VelozientComputers.Core.Services
         #region Query Methods
 
         /// <inheritdoc/>
-        public async Task<ComputerAssignmentDto> GetCurrentAssignmentAsync(int computerId)
+        public async Task<ComputerAssignment> GetCurrentAssignmentAsync(int computerId)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(computerId);
             if (computer == null)
@@ -46,11 +46,11 @@ namespace VelozientComputers.Core.Services
                 .OrderByDescending(a => a.StartDate)
                 .FirstOrDefault(a => a.EndDate == null);
 
-            return currentAssignment != null ? MapToAssignmentDto(currentAssignment) : null;
+            return currentAssignment != null ? MapToAssignment(currentAssignment) : null;
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<ComputerAssignmentDto>> GetComputerAssignmentHistoryAsync(int computerId)
+        public async Task<IEnumerable<ComputerAssignment>> GetComputerAssignmentHistoryAsync(int computerId)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(computerId);
             if (computer == null)
@@ -60,11 +60,11 @@ namespace VelozientComputers.Core.Services
 
             return computer.Assignments?
                 .OrderByDescending(a => a.StartDate)
-                .Select(MapToAssignmentDto) ?? Enumerable.Empty<ComputerAssignmentDto>();
+                .Select(MapToAssignment) ?? Enumerable.Empty<ComputerAssignment>();
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<ComputerAssignmentDto>> GetUserAssignmentHistoryAsync(int userId)
+        public async Task<IEnumerable<ComputerAssignment>> GetUserAssignmentHistoryAsync(int userId)
         {
             var user = await _userRepository.GetWithCurrentComputersAsync(userId);
             if (user == null)
@@ -73,8 +73,8 @@ namespace VelozientComputers.Core.Services
             }
 
             return user.ComputerAssignments?
-                .OrderByDescending(a => a.StartDate)
-                .Select(MapToAssignmentDto) ?? Enumerable.Empty<ComputerAssignmentDto>();
+                .OrderByDescending(a => a.AssignStartDate)
+                .Select(MapToAssignment) ?? Enumerable.Empty<ComputerAssignment>();
         }
 
         #endregion
@@ -82,15 +82,15 @@ namespace VelozientComputers.Core.Services
         #region Command Methods
 
         /// <inheritdoc/>
-        public async Task<ComputerAssignmentDto> AssignComputerAsync(ComputerAssignmentDto assignmentDto)
+        public async Task<ComputerAssignment> AssignComputerAsync(ComputerAssignment assignment)
         {
-            var computer = await _computerRepository.GetWithCurrentAssignmentAsync(assignmentDto.ComputerId);
+            var computer = await _computerRepository.GetWithCurrentAssignmentAsync(assignment.ComputerId);
             if (computer == null)
             {
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            var user = await _userRepository.GetByIdAsync(assignmentDto.UserId);
+            var user = await _userRepository.GetByIdAsync(assignment.UserId);
             if (user == null)
             {
                 throw new KeyNotFoundException("User not found");
@@ -107,10 +107,10 @@ namespace VelozientComputers.Core.Services
 
             var assignment = new ComputerAssignment
             {
-                ComputerId = assignmentDto.ComputerId,
-                UserId = assignmentDto.UserId,
-                StartDate = assignmentDto.StartDate,
-                EndDate = assignmentDto.EndDate
+                ComputerId = assignment.ComputerId,
+                UserId = assignment.UserId,
+                StartDate = assignment.StartDate,
+                EndDate = assignment.EndDate
             };
 
             computer.Status = "In Use";
@@ -119,11 +119,11 @@ namespace VelozientComputers.Core.Services
 
             _computerRepository.Update(computer);
 
-            return MapToAssignmentDto(assignment);
+            return MapToAssignment(assignment);
         }
 
         /// <inheritdoc/>
-        public async Task<ComputerAssignmentDto> EndAssignmentAsync(int computerId, DateTime endDate)
+        public async Task<ComputerAssignment> EndAssignmentAsync(int computerId, DateTime endDate)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(computerId);
             if (computer == null)
@@ -145,7 +145,7 @@ namespace VelozientComputers.Core.Services
 
             _computerRepository.Update(computer);
 
-            return MapToAssignmentDto(currentAssignment);
+            return MapToAssignment(currentAssignment);
         }
 
         #endregion
@@ -153,16 +153,16 @@ namespace VelozientComputers.Core.Services
         #region Helper Methods
 
         /// <summary>
-        /// Maps a ComputerAssignment entity to ComputerAssignmentDto
+        /// Maps a ComputerAssignment entity to ComputerAssignment
         /// </summary>
-        private ComputerAssignmentDto MapToAssignmentDto(ComputerAssignment assignment)
+        private ComputerAssignment MapToAssignment(ComputerAssignment assignment)
         {
-            return new ComputerAssignmentDto
+            return new ComputerAssignment
             {
                 ComputerId = assignment.ComputerId,
                 UserId = assignment.UserId,
-                StartDate = assignment.StartDate,
-                EndDate = assignment.EndDate
+                AssignmentStartDate = assignment.AssignmentStartDate,
+                AssignmentEndDate = assignment.AssignmentEndDate
             };
         }
 

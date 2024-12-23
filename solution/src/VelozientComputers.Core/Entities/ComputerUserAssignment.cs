@@ -7,7 +7,7 @@ namespace VelozientComputers.Core.Entities
     /// Represents an assignment of a computer to a user.
     /// </summary>
     [Table("lnk_computer_user")]
-    public class ComputerUserAssignment
+    public class ComputerUserAssignment : BaseEntity
     {
         /// <summary>
         /// Gets or sets the unique identifier for the assignment.

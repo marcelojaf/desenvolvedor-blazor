@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using VelozientComputers.Core.Entities;
+using VelozientComputers.Core.Interfaces.Service;
 
 namespace VelozientComputers.Core.Validations
 {

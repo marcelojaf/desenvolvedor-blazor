@@ -7,7 +7,7 @@ namespace VelozientComputers.Core.Entities
     /// Represents a computer in the inventory system.
     /// </summary>
     [Table("computer")]
-    public class Computer
+    public class Computer : BaseEntity
     {
         /// <summary>
         /// Gets or sets the unique identifier for the computer.

@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VelozientComputers.Core.Validations;
+using VelozientComputers.Core.Interfaces.Service;
 using VelozientComputers.Infrastructure.Data;
 
 namespace VelozientComputers.Infrastructure.Services

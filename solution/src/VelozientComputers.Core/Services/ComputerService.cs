@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using VelozientComputers.Core.Entities;
-using VelozientComputers.Infrastructure.Repository;
-using VelozientComputers.Api.DTOs;
+using VelozientComputers.Core.Interfaces.Repository;
+using VelozientComputers.Core.Interfaces.Service;
 
 namespace VelozientComputers.Core.Services
 {
@@ -40,25 +40,25 @@ namespace VelozientComputers.Core.Services
         #region Query Methods
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<ComputerListDto>> GetAllComputersAsync()
+        public async Task<IEnumerable<Computer>> GetAllComputersAsync()
         {
             var computers = await _computerRepository.GetAllWithCurrentAssignmentsAsync();
-            return computers.Select(MapToComputerListDto);
+            return computers.Select(MapToComputer);
         }
 
         /// <inheritdoc/>
-        public async Task<ComputerListDto> GetComputerByIdAsync(int id)
+        public async Task<Computer> GetComputerByIdAsync(int id)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(id);
-            return computer != null ? MapToComputerListDto(computer) : null;
+            return computer != null ? MapToComputer(computer) : null;
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<ComputerListDto>> GetComputersWithExpiringWarrantyAsync(int daysThreshold = 30)
+        public async Task<IEnumerable<Computer>> GetComputersWithExpiringWarrantyAsync(int daysThreshold = 30)
         {
             var expirationDate = DateTime.UtcNow.AddDays(daysThreshold);
             var computers = await _computerRepository.FindAsync(c => c.WarrantyExpiryDate <= expirationDate);
-            return computers.Select(MapToComputerListDto);
+            return computers.Select(MapToComputer);
         }
 
         #endregion
@@ -66,30 +66,30 @@ namespace VelozientComputers.Core.Services
         #region Command Methods
 
         /// <inheritdoc/>
-        public async Task<ComputerListDto> CreateComputerAsync(CreateComputerDto computerDto)
+        public async Task<Computer> CreateComputerAsync(Computer computer)
         {
-            if (!await ValidateSerialNumberAsync(computerDto.Manufacturer, computerDto.SerialNumber))
+            if (!await ValidateSerialNumberAsync(computer.Manufacturer, computer.SerialNumber))
             {
                 throw new ArgumentException("Invalid serial number for the specified manufacturer");
             }
 
             var computer = new Computer
             {
-                Manufacturer = computerDto.Manufacturer,
-                SerialNumber = computerDto.SerialNumber,
-                Status = computerDto.Status,
-                PurchaseDate = computerDto.PurchaseDate,
-                WarrantyExpiryDate = computerDto.WarrantyExpiryDate,
-                Specifications = computerDto.Specifications,
-                ImageUrl = computerDto.ImageUrl
+                Manufacturer = computer.Manufacturer,
+                SerialNumber = computer.SerialNumber,
+                Status = computer.Status,
+                PurchaseDate = computer.PurchaseDate,
+                WarrantyExpiryDate = computer.WarrantyExpiryDate,
+                Specifications = computer.Specifications,
+                ImageUrl = computer.ImageUrl
             };
 
             await _computerRepository.AddAsync(computer);
-            return MapToComputerListDto(computer);
+            return MapToComputer(computer);
         }
 
         /// <inheritdoc/>
-        public async Task<ComputerListDto> UpdateComputerAsync(int id, UpdateComputerDto computerDto)
+        public async Task<Computer> UpdateComputerAsync(int id, Computer computer)
         {
             var computer = await _computerRepository.GetByIdAsync(id);
             if (computer == null)
@@ -97,26 +97,26 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            if (computerDto.SerialNumber != computer.SerialNumber && 
-                !await ValidateSerialNumberAsync(computerDto.Manufacturer, computerDto.SerialNumber))
+            if (computer.SerialNumber != computer.SerialNumber &&
+                !await ValidateSerialNumberAsync(computer.Manufacturer, computer.SerialNumber))
             {
                 throw new ArgumentException("Invalid serial number for the specified manufacturer");
             }
 
-            computer.Manufacturer = computerDto.Manufacturer;
-            computer.SerialNumber = computerDto.SerialNumber;
-            computer.Status = computerDto.Status;
-            computer.PurchaseDate = computerDto.PurchaseDate;
-            computer.WarrantyExpiryDate = computerDto.WarrantyExpiryDate;
-            computer.Specifications = computerDto.Specifications;
-            computer.ImageUrl = computerDto.ImageUrl;
+            computer.Manufacturer = computer.Manufacturer;
+            computer.SerialNumber = computer.SerialNumber;
+            computer.Status = computer.Status;
+            computer.PurchaseDate = computer.PurchaseDate;
+            computer.WarrantyExpiryDate = computer.WarrantyExpiryDate;
+            computer.Specifications = computer.Specifications;
+            computer.ImageUrl = computer.ImageUrl;
 
             _computerRepository.Update(computer);
-            return MapToComputerListDto(computer);
+            return MapToComputer(computer);
         }
 
         /// <inheritdoc/>
-        public async Task<ComputerListDto> UpdateComputerStatusAsync(int id, UpdateComputerStatusDto statusDto)
+        public async Task<Computer> UpdateComputerStatusAsync(int id, ComputerStatus status)
         {
             var computer = await _computerRepository.GetByIdAsync(id);
             if (computer == null)
@@ -124,10 +124,10 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            computer.Status = statusDto.NewStatus;
+            computer.Status = status.NewStatus;
             _computerRepository.Update(computer);
-            
-            return MapToComputerListDto(computer);
+
+            return MapToComputer(computer);
         }
 
         /// <inheritdoc/>
@@ -158,16 +158,16 @@ namespace VelozientComputers.Core.Services
         #region Helper Methods
 
         /// <summary>
-        /// Maps a Computer entity to ComputerListDto
+        /// Maps a Computer entity to Computer
         /// </summary>
-        private ComputerListDto MapToComputerListDto(Computer computer)
+        private Computer MapToComputer(Computer computer)
         {
             var warrantyStatus = GetWarrantyStatus(computer.WarrantyExpiryDate);
             var currentAssignment = computer.Assignments
                 ?.OrderByDescending(a => a.StartDate)
                 .FirstOrDefault(a => a.EndDate == null);
 
-            return new ComputerListDto
+            return new Computer
             {
                 Id = computer.Id,
                 Manufacturer = computer.Manufacturer,
@@ -178,14 +178,14 @@ namespace VelozientComputers.Core.Services
                 Specifications = computer.Specifications,
                 ImageUrl = computer.ImageUrl,
                 WarrantyStatus = warrantyStatus,
-                CurrentUser = currentAssignment?.User != null 
-                    ? new UserListDto 
-                    { 
+                CurrentUser = currentAssignment?.User != null
+                    ? new User
+                    {
                         Id = currentAssignment.User.Id,
                         FirstName = currentAssignment.User.FirstName,
                         LastName = currentAssignment.User.LastName,
                         Email = currentAssignment.User.Email
-                    } 
+                    }
                     : null
             };
         }
@@ -196,7 +196,7 @@ namespace VelozientComputers.Core.Services
         private string GetWarrantyStatus(DateTime warrantyExpiryDate)
         {
             var daysUntilExpiry = (warrantyExpiryDate - DateTime.UtcNow).TotalDays;
-            
+
             if (daysUntilExpiry <= 0)
                 return "RED";
             if (daysUntilExpiry <= 30)

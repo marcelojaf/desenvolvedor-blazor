@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using VelozientComputers.Api.DTOs;
-using VelozientComputers.Core.Services;
 
 namespace VelozientComputers.Api.Controllers
 {

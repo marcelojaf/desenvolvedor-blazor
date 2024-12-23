@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using VelozientComputers.Core.Common;
 
 namespace VelozientComputers.Infrastructure.Repository
 {

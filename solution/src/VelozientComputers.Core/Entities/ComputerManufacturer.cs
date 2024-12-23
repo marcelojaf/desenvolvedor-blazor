@@ -7,7 +7,7 @@ namespace VelozientComputers.Core.Entities
     /// Represents a computer manufacturer with its specific serial number validation pattern.
     /// </summary>
     [Table("computer_manufacturer")]
-    public class ComputerManufacturer
+    public class ComputerManufacturer : BaseEntity
     {
         /// <summary>
         /// Gets or sets the unique identifier for the manufacturer.

@@ -7,7 +7,7 @@ namespace VelozientComputers.Core.Entities
     /// Represents a status that a computer can have in the system.
     /// </summary>
     [Table("computer_status")]
-    public class ComputerStatus
+    public class ComputerStatus : BaseEntity
     {
         /// <summary>
         /// Gets or sets the unique identifier for the status.

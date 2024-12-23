@@ -5,7 +5,7 @@ namespace VelozientComputers.Core.Entities
     /// <summary>
     /// Represents the assignment of a computer to a user in the inventory management system.
     /// </summary>
-    public class ComputerAssignment
+    public class ComputerAssignment : BaseEntity
     {
         /// <summary>
         /// Gets or sets the unique identifier for the computer assignment.

@@ -1,4 +1,4 @@
-namespace VelozientComputers.Api.DTO
+namespace VelozientComputers.Api.DTOs
 {
     /// <summary>
     /// DTO para criação de um novo computador

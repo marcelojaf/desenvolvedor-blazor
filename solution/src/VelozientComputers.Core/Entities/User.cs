@@ -7,7 +7,7 @@ namespace VelozientComputers.Core.Entities
     /// Represents a user in the system who can be assigned computers.
     /// </summary>
     [Table("user")]
-    public class User
+    public class User : BaseEntity
     {
         /// <summary>
         /// Gets or sets the unique identifier for the user.

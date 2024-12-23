@@ -1,6 +1,6 @@
 using VelozientComputers.Core.Entities;
-using VelozientComputers.Infrastructure.Repository;
-using VelozientComputers.Api.DTOs;
+using VelozientComputers.Core.Interfaces.Repository;
+using VelozientComputers.Core.Interfaces.Service;
 
 namespace VelozientComputers.Core.Services
 {
@@ -31,25 +31,25 @@ namespace VelozientComputers.Core.Services
         #region Query Methods
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<UserListDto>> GetAllUsersAsync()
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             var users = await _userRepository.GetAllWithCurrentComputersAsync();
-            return users.Select(MapToUserListDto);
+            return users.Select(MapToUser);
         }
 
         /// <inheritdoc/>
-        public async Task<UserListDto> GetUserByIdAsync(int id)
+        public async Task<User> GetUserByIdAsync(int id)
         {
             var user = await _userRepository.GetWithCurrentComputersAsync(id);
-            return user != null ? MapToUserListDto(user) : null;
+            return user != null ? MapToUser(user) : null;
         }
 
         /// <inheritdoc/>
-        public async Task<UserListDto> GetUserByEmailAsync(string email)
+        public async Task<User> GetUserByEmailAsync(string email)
         {
             var users = await _userRepository.FindAsync(u => u.Email == email);
             var user = users.FirstOrDefault();
-            return user != null ? MapToUserListDto(user) : null;
+            return user != null ? MapToUser(user) : null;
         }
 
         #endregion
@@ -57,9 +57,9 @@ namespace VelozientComputers.Core.Services
         #region Command Methods
 
         /// <inheritdoc/>
-        public async Task<UserListDto> CreateUserAsync(CreateUserDto userDto)
+        public async Task<User> CreateUserAsync(User user)
         {
-            var existingUser = await GetUserByEmailAsync(userDto.Email);
+            var existingUser = await GetUserByEmailAsync(user.Email);
             if (existingUser != null)
             {
                 throw new InvalidOperationException("A user with this email already exists");
@@ -67,17 +67,17 @@ namespace VelozientComputers.Core.Services
 
             var user = new User
             {
-                FirstName = userDto.FirstName,
-                LastName = userDto.LastName,
-                Email = userDto.Email
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email
             };
 
             await _userRepository.AddAsync(user);
-            return MapToUserListDto(user);
+            return MapToUser(user);
         }
 
         /// <inheritdoc/>
-        public async Task<UserListDto> UpdateUserAsync(int id, UpdateUserDto userDto)
+        public async Task<User> UpdateUserAsync(int id, User user)
         {
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null)
@@ -85,18 +85,18 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("User not found");
             }
 
-            var existingUser = await GetUserByEmailAsync(userDto.Email);
+            var existingUser = await GetUserByEmailAsync(user.Email);
             if (existingUser != null && existingUser.Id != id)
             {
                 throw new InvalidOperationException("A user with this email already exists");
             }
 
-            user.FirstName = userDto.FirstName;
-            user.LastName = userDto.LastName;
-            user.Email = userDto.Email;
+            user.FirstName = user.FirstName;
+            user.LastName = user.LastName;
+            user.Email = user.Email;
 
             _userRepository.Update(user);
-            return MapToUserListDto(user);
+            return MapToUser(user);
         }
 
         /// <inheritdoc/>
@@ -116,13 +116,13 @@ namespace VelozientComputers.Core.Services
         #region Helper Methods
 
         /// <summary>
-        /// Maps a User entity to UserListDto
+        /// Maps a User entity to User
         /// </summary>
-        private UserListDto MapToUserListDto(User user)
+        private User MapToUser(User user)
         {
             var currentAssignments = user.ComputerAssignments?
                 .Where(a => a.EndDate == null)
-                .Select(a => new ComputerListDto
+                .Select(a => new Computer
                 {
                     Id = a.Computer.Id,
                     Manufacturer = a.Computer.Manufacturer,
@@ -134,15 +134,15 @@ namespace VelozientComputers.Core.Services
                     ImageUrl = a.Computer.ImageUrl,
                     WarrantyStatus = GetWarrantyStatus(a.Computer.WarrantyExpiryDate)
                 })
-                .ToList();
+                .To();
 
-            return new UserListDto
+            return new User
             {
                 Id = user.Id,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                AssignedComputers = currentAssignments ?? new List<ComputerListDto>()
+                AssignedComputers = currentAssignments ?? new <Computer>()
             };
         }
 
@@ -152,7 +152,7 @@ namespace VelozientComputers.Core.Services
         private string GetWarrantyStatus(DateTime warrantyExpiryDate)
         {
             var daysUntilExpiry = (warrantyExpiryDate - DateTime.UtcNow).TotalDays;
-            
+
             if (daysUntilExpiry <= 0)
                 return "RED";
             if (daysUntilExpiry <= 30)
