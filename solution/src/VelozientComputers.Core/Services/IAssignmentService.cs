@@ -14,21 +14,21 @@ namespace VelozientComputers.Core.Services
         /// </summary>
         /// <param name="computerId">Computer identifier</param>
         /// <returns>Current assignment details if exists, null otherwise</returns>
-        Task<ComputerAssignmentDto> GetCurrentAssignmentAsync(int computerId);
+        Task<ComputerAssignmentDTO> GetCurrentAssignmentAsync(int computerId);
 
         /// <summary>
         /// Gets all assignments for a computer
         /// </summary>
         /// <param name="computerId">Computer identifier</param>
         /// <returns>Collection of all assignments for the computer</returns>
-        Task<IEnumerable<ComputerAssignmentDto>> GetComputerAssignmentHistoryAsync(int computerId);
+        Task<IEnumerable<ComputerAssignmentDTO>> GetComputerAssignmentHistoryAsync(int computerId);
 
         /// <summary>
         /// Gets all assignments for a user
         /// </summary>
         /// <param name="userId">User identifier</param>
         /// <returns>Collection of all assignments for the user</returns>
-        Task<IEnumerable<ComputerAssignmentDto>> GetUserAssignmentHistoryAsync(int userId);
+        Task<IEnumerable<ComputerAssignmentDTO>> GetUserAssignmentHistoryAsync(int userId);
 
         #endregion
 
@@ -39,7 +39,7 @@ namespace VelozientComputers.Core.Services
         /// </summary>
         /// <param name="assignmentDto">Assignment details</param>
         /// <returns>Created assignment details</returns>
-        Task<ComputerAssignmentDto> AssignComputerAsync(ComputerAssignmentDto assignmentDto);
+        Task<ComputerAssignmentDTO> AssignComputerAsync(ComputerAssignmentDTO assignmentDTO);
 
         /// <summary>
         /// Ends a computer assignment
@@ -47,7 +47,7 @@ namespace VelozientComputers.Core.Services
         /// <param name="computerId">Computer identifier</param>
         /// <param name="endDate">End date of the assignment</param>
         /// <returns>Updated assignment details</returns>
-        Task<ComputerAssignmentDto> EndAssignmentAsync(int computerId, DateTime endDate);
+        Task<ComputerAssignmentDTO> EndAssignmentAsync(int computerId, DateTime endDate);
 
         #endregion
     }
