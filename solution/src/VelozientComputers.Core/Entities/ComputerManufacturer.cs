@@ -24,12 +24,6 @@ namespace VelozientComputers.Core.Entities
         public string SerialRegex { get; set; }
 
         /// <summary>
-        /// Gets or sets the creation date of the entity.
-        /// </summary>
-        [Column("create_dt")]
-        public DateTime CreateDate { get; set; }
-
-        /// <summary>
         /// Gets or sets the collection of computers from this manufacturer.
         /// </summary>
         public virtual ICollection<Computer> Computers { get; set; }

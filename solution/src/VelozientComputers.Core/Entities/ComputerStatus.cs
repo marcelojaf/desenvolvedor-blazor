@@ -17,12 +17,6 @@ namespace VelozientComputers.Core.Entities
         public string LocalizedName { get; set; }
 
         /// <summary>
-        /// Gets or sets the creation date of the entity.
-        /// </summary>
-        [Column("create_dt")]
-        public DateTime CreateDate { get; set; }
-
-        /// <summary>
         /// Gets or sets the collection of status assignments.
         /// </summary>
         public virtual ICollection<ComputerStatusAssignment> StatusAssignments { get; set; }

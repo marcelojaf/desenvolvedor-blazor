@@ -10,8 +10,6 @@ namespace VelozientComputers.Infrastructure.Repository
     /// </summary>
     public class ComputerRepository : Repository<Computer>, IComputerRepository
     {
-        #region Constructor
-
         /// <summary>
         /// Initializes a new instance of the ComputerRepository class
         /// </summary>
@@ -20,133 +18,63 @@ namespace VelozientComputers.Infrastructure.Repository
         {
         }
 
-        #endregion
-
-        #region Query Methods
-
         /// <inheritdoc/>
         public async Task<Computer> GetWithCurrentAssignmentAsync(int id)
         {
-            var computers = await (
-                from c in _dbSet
-                where c.Id == id
-                select new Computer
-                {
-                    Id = c.Id,
-                    ComputerManufacturerId = c.ComputerManufacturerId,
-                    SerialNumber = c.SerialNumber,
-                    Specifications = c.Specifications,
-                    ImageUrl = c.ImageUrl,
-                    PurchaseDate = c.PurchaseDate,
-                    WarrantyExpirationDate = c.WarrantyExpirationDate,
-                    CreateDate = c.CreateDate,
-                    Manufacturer = new ComputerManufacturer
-                    {
-                        Id = c.Manufacturer.Id,
-                        Name = c.Manufacturer.Name,
-                        SerialRegex = c.Manufacturer.SerialRegex,
-                        CreateDate = c.Manufacturer.CreateDate
-                    },
-                    UserAssignments = c.UserAssignments
-                        .Where(a => a.AssignEndDate == null)
-                        .Select(a => new ComputerUserAssignment
-                        {
-                            Id = a.Id,
-                            ComputerId = a.ComputerId,
-                            UserId = a.UserId,
-                            AssignStartDate = a.AssignStartDate,
-                            AssignEndDate = a.AssignEndDate,
-                            User = new User
-                            {
-                                Id = a.User.Id,
-                                FirstName = a.User.FirstName,
-                                LastName = a.User.LastName,
-                                EmailAddress = a.User.EmailAddress,
-                                CreateDate = a.User.CreateDate
-                            }
-                        }).ToList(),
-                    StatusAssignments = c.StatusAssignments
-                        .OrderByDescending(s => s.AssignDate)
-                        .Take(1)
-                        .Select(s => new ComputerStatusAssignment
-                        {
-                            Id = s.Id,
-                            ComputerId = s.ComputerId,
-                            ComputerStatusId = s.ComputerStatusId,
-                            AssignDate = s.AssignDate,
-                            Status = new ComputerStatus
-                            {
-                                Id = s.Status.Id,
-                                LocalizedName = s.Status.LocalizedName,
-                                CreateDate = s.Status.CreateDate
-                            }
-                        }).ToList()
-                }).FirstOrDefaultAsync();
+            // Load computer with all related data
+            var computer = await _dbSet
+                .Include(c => c.Manufacturer)
+                .Include(c => c.UserAssignments)
+                    .ThenInclude(a => a.User)
+                .Include(c => c.StatusAssignments)
+                    .ThenInclude(s => s.Status)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
-            return computers;
+            if (computer != null)
+            {
+                // Filter to only current user assignments in memory
+                computer.UserAssignments = computer.UserAssignments
+                    .Where(a => a.AssignEndDate == null)
+                    .ToList();
+
+                // Take only the most recent status assignment in memory
+                computer.StatusAssignments = computer.StatusAssignments
+                    .OrderByDescending(s => s.AssignDate)
+                    .Take(1)
+                    .ToList();
+            }
+
+            return computer;
         }
 
         /// <inheritdoc/>
         public async Task<IEnumerable<Computer>> GetAllWithCurrentAssignmentsAsync()
         {
-            var computers = await (
-                from c in _dbSet
-                select new Computer
-                {
-                    Id = c.Id,
-                    ComputerManufacturerId = c.ComputerManufacturerId,
-                    SerialNumber = c.SerialNumber,
-                    Specifications = c.Specifications,
-                    ImageUrl = c.ImageUrl,
-                    PurchaseDate = c.PurchaseDate,
-                    WarrantyExpirationDate = c.WarrantyExpirationDate,
-                    CreateDate = c.CreateDate,
-                    Manufacturer = new ComputerManufacturer
-                    {
-                        Id = c.Manufacturer.Id,
-                        Name = c.Manufacturer.Name,
-                        SerialRegex = c.Manufacturer.SerialRegex,
-                        CreateDate = c.Manufacturer.CreateDate
-                    },
-                    UserAssignments = c.UserAssignments
-                        .Where(a => a.AssignEndDate == null)
-                        .Select(a => new ComputerUserAssignment
-                        {
-                            Id = a.Id,
-                            ComputerId = a.ComputerId,
-                            UserId = a.UserId,
-                            AssignStartDate = a.AssignStartDate,
-                            AssignEndDate = a.AssignEndDate,
-                            User = new User
-                            {
-                                Id = a.User.Id,
-                                FirstName = a.User.FirstName,
-                                LastName = a.User.LastName,
-                                EmailAddress = a.User.EmailAddress,
-                                CreateDate = a.User.CreateDate
-                            }
-                        }).ToList(),
-                    StatusAssignments = c.StatusAssignments
-                        .OrderByDescending(s => s.AssignDate)
-                        .Take(1)
-                        .Select(s => new ComputerStatusAssignment
-                        {
-                            Id = s.Id,
-                            ComputerId = s.ComputerId,
-                            ComputerStatusId = s.ComputerStatusId,
-                            AssignDate = s.AssignDate,
-                            Status = new ComputerStatus
-                            {
-                                Id = s.Status.Id,
-                                LocalizedName = s.Status.LocalizedName,
-                                CreateDate = s.Status.CreateDate
-                            }
-                        }).ToList()
-                }).ToListAsync();
+            // Load computers with all related data
+            var computers = await _dbSet
+                .Include(c => c.Manufacturer)
+                .Include(c => c.UserAssignments)
+                    .ThenInclude(a => a.User)
+                .Include(c => c.StatusAssignments)
+                    .ThenInclude(s => s.Status)
+                .ToListAsync();
+
+            // Process the data in memory
+            foreach (var computer in computers)
+            {
+                // Filter to only current user assignments
+                computer.UserAssignments = computer.UserAssignments
+                    .Where(a => a.AssignEndDate == null)
+                    .ToList();
+
+                // Take only the most recent status assignment
+                computer.StatusAssignments = computer.StatusAssignments
+                    .OrderByDescending(s => s.AssignDate)
+                    .Take(1)
+                    .ToList();
+            }
 
             return computers;
         }
-
-        #endregion
     }
 }
