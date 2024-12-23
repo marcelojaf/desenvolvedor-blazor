@@ -33,23 +33,20 @@ namespace VelozientComputers.Core.Services
         /// <inheritdoc/>
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            var users = await _userRepository.GetAllWithCurrentComputersAsync();
-            return users.Select(MapToUser);
+            return await _userRepository.GetAllWithCurrentComputersAsync();
         }
 
         /// <inheritdoc/>
         public async Task<User> GetUserByIdAsync(int id)
         {
-            var user = await _userRepository.GetWithCurrentComputersAsync(id);
-            return user != null ? MapToUser(user) : null;
+            return await _userRepository.GetWithCurrentComputersAsync(id);
         }
 
         /// <inheritdoc/>
         public async Task<User> GetUserByEmailAsync(string email)
         {
-            var users = await _userRepository.FindAsync(u => u.Email == email);
-            var user = users.FirstOrDefault();
-            return user != null ? MapToUser(user) : null;
+            var users = await _userRepository.FindAsync(u => u.EmailAddress == email);
+            return users.FirstOrDefault();
         }
 
         #endregion
@@ -59,44 +56,37 @@ namespace VelozientComputers.Core.Services
         /// <inheritdoc/>
         public async Task<User> CreateUserAsync(User user)
         {
-            var existingUser = await GetUserByEmailAsync(user.Email);
+            var existingUser = await GetUserByEmailAsync(user.EmailAddress);
             if (existingUser != null)
             {
                 throw new InvalidOperationException("A user with this email already exists");
             }
 
-            var user = new User
-            {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email
-            };
-
             await _userRepository.AddAsync(user);
-            return MapToUser(user);
+            return user;
         }
 
         /// <inheritdoc/>
-        public async Task<User> UpdateUserAsync(int id, User user)
+        public async Task<User> UpdateUserAsync(int id, User updatedUser)
         {
-            var user = await _userRepository.GetByIdAsync(id);
-            if (user == null)
+            var existingUser = await _userRepository.GetByIdAsync(id);
+            if (existingUser == null)
             {
                 throw new KeyNotFoundException("User not found");
             }
 
-            var existingUser = await GetUserByEmailAsync(user.Email);
-            if (existingUser != null && existingUser.Id != id)
+            var userWithEmail = await GetUserByEmailAsync(updatedUser.EmailAddress);
+            if (userWithEmail != null && userWithEmail.Id != id)
             {
                 throw new InvalidOperationException("A user with this email already exists");
             }
 
-            user.FirstName = user.FirstName;
-            user.LastName = user.LastName;
-            user.Email = user.Email;
+            existingUser.FirstName = updatedUser.FirstName;
+            existingUser.LastName = updatedUser.LastName;
+            existingUser.EmailAddress = updatedUser.EmailAddress;
 
-            _userRepository.Update(user);
-            return MapToUser(user);
+            _userRepository.Update(existingUser);
+            return existingUser;
         }
 
         /// <inheritdoc/>
@@ -109,55 +99,6 @@ namespace VelozientComputers.Core.Services
             }
 
             _userRepository.Remove(user);
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Maps a User entity to User
-        /// </summary>
-        private User MapToUser(User user)
-        {
-            var currentAssignments = user.ComputerAssignments?
-                .Where(a => a.EndDate == null)
-                .Select(a => new Computer
-                {
-                    Id = a.Computer.Id,
-                    Manufacturer = a.Computer.Manufacturer,
-                    SerialNumber = a.Computer.SerialNumber,
-                    Status = a.Computer.Status,
-                    PurchaseDate = a.Computer.PurchaseDate,
-                    WarrantyExpiryDate = a.Computer.WarrantyExpiryDate,
-                    Specifications = a.Computer.Specifications,
-                    ImageUrl = a.Computer.ImageUrl,
-                    WarrantyStatus = GetWarrantyStatus(a.Computer.WarrantyExpiryDate)
-                })
-                .To();
-
-            return new User
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                AssignedComputers = currentAssignments ?? new <Computer>()
-            };
-        }
-
-        /// <summary>
-        /// Determines the warranty status based on expiry date
-        /// </summary>
-        private string GetWarrantyStatus(DateTime warrantyExpiryDate)
-        {
-            var daysUntilExpiry = (warrantyExpiryDate - DateTime.UtcNow).TotalDays;
-
-            if (daysUntilExpiry <= 0)
-                return "RED";
-            if (daysUntilExpiry <= 30)
-                return "YELLOW";
-            return "GREEN";
         }
 
         #endregion

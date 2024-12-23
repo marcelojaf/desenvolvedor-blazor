@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using VelozientComputers.Core.Entities;
+using VelozientComputers.Core.Interfaces.Repository;
 
 namespace VelozientComputers.Infrastructure.Repository
 {
@@ -70,12 +72,17 @@ namespace VelozientComputers.Infrastructure.Repository
         /// <inheritdoc/>
         public virtual async Task AddAsync(T entity)
         {
+            entity.CreateDate = DateTime.UtcNow;
             await _dbSet.AddAsync(entity);
         }
 
         /// <inheritdoc/>
         public virtual async Task AddRangeAsync(IEnumerable<T> entities)
         {
+            foreach (var entity in entities)
+            {
+                entity.CreateDate = DateTime.UtcNow;
+            }
             await _dbSet.AddRangeAsync(entities);
         }
 
@@ -84,6 +91,8 @@ namespace VelozientComputers.Infrastructure.Repository
         {
             _dbSet.Attach(entity);
             _context.Entry(entity).State = EntityState.Modified;
+            // Prevent CreateDate from being modified
+            _context.Entry(entity).Property(x => x.CreateDate).IsModified = false;
         }
 
         /// <inheritdoc/>

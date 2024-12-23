@@ -10,13 +10,6 @@ namespace VelozientComputers.Core.Entities
     public class Computer : BaseEntity
     {
         /// <summary>
-        /// Gets or sets the unique identifier for the computer.
-        /// </summary>
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        /// <summary>
         /// Gets or sets the manufacturer ID of the computer.
         /// </summary>
         [Required]
@@ -27,7 +20,7 @@ namespace VelozientComputers.Core.Entities
         /// Gets or sets the manufacturer of the computer.
         /// </summary>
         [ForeignKey("ComputerManufacturerId")]
-        public ComputerManufacturer Manufacturer { get; set; }
+        public virtual ComputerManufacturer Manufacturer { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number of the computer.
@@ -51,29 +44,25 @@ namespace VelozientComputers.Core.Entities
         /// <summary>
         /// Gets or sets the purchase date of the computer.
         /// </summary>
+        [Required]
         [Column("purchase_dt")]
         public DateTime PurchaseDate { get; set; }
 
         /// <summary>
         /// Gets or sets the warranty expiration date of the computer.
         /// </summary>
+        [Required]
         [Column("warranty_expiration_dt")]
         public DateTime WarrantyExpirationDate { get; set; }
 
         /// <summary>
-        /// Gets or sets the creation date of the computer record.
-        /// </summary>
-        [Column("create_dt")]
-        public DateTime CreateDate { get; set; }
-
-        /// <summary>
         /// Gets or sets the collection of status assignments for this computer.
         /// </summary>
-        public ICollection<ComputerStatusAssignment> StatusAssignments { get; set; }
+        public virtual ICollection<ComputerStatusAssignment> StatusAssignments { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of user assignments for this computer.
         /// </summary>
-        public ICollection<ComputerUserAssignment> UserAssignments { get; set; }
+        public virtual ICollection<ComputerUserAssignment> UserAssignments { get; set; }
     }
 }

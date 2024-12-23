@@ -10,13 +10,6 @@ namespace VelozientComputers.Core.Entities
     public class ComputerManufacturer : BaseEntity
     {
         /// <summary>
-        /// Gets or sets the unique identifier for the manufacturer.
-        /// </summary>
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        /// <summary>
         /// Gets or sets the name of the manufacturer.
         /// </summary>
         [Required]
@@ -26,12 +19,13 @@ namespace VelozientComputers.Core.Entities
         /// <summary>
         /// Gets or sets the regular expression pattern for validating serial numbers.
         /// </summary>
+        [Required]
         [Column("serial_regex")]
         public string SerialRegex { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of computers from this manufacturer.
         /// </summary>
-        public ICollection<Computer> Computers { get; set; }
+        public virtual ICollection<Computer> Computers { get; set; }
     }
 }

@@ -10,13 +10,6 @@ namespace VelozientComputers.Core.Entities
     public class ComputerStatusAssignment : BaseEntity
     {
         /// <summary>
-        /// Gets or sets the unique identifier for the status assignment.
-        /// </summary>
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        /// <summary>
         /// Gets or sets the computer ID for this assignment.
         /// </summary>
         [Required]
@@ -33,6 +26,7 @@ namespace VelozientComputers.Core.Entities
         /// <summary>
         /// Gets or sets the date when this status was assigned.
         /// </summary>
+        [Required]
         [Column("assign_dt")]
         public DateTime AssignDate { get; set; }
 
@@ -40,12 +34,12 @@ namespace VelozientComputers.Core.Entities
         /// Gets or sets the computer associated with this status assignment.
         /// </summary>
         [ForeignKey("ComputerId")]
-        public Computer Computer { get; set; }
+        public virtual Computer Computer { get; set; }
 
         /// <summary>
         /// Gets or sets the status associated with this assignment.
         /// </summary>
         [ForeignKey("ComputerStatusId")]
-        public ComputerStatus Status { get; set; }
+        public virtual ComputerStatus Status { get; set; }
     }
 }

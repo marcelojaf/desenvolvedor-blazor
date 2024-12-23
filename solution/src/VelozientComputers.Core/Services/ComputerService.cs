@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using VelozientComputers.Core.Entities;
 using VelozientComputers.Core.Interfaces.Repository;
 using VelozientComputers.Core.Interfaces.Service;
@@ -13,7 +12,8 @@ namespace VelozientComputers.Core.Services
         #region Fields
 
         private readonly IComputerRepository _computerRepository;
-        private readonly Dictionary<string, string> _serialNumberPatterns;
+        private readonly IManufacturerRepository _manufacturerRepository;
+        private readonly ISerialNumberValidationService _serialNumberValidationService;
 
         #endregion
 
@@ -23,16 +23,16 @@ namespace VelozientComputers.Core.Services
         /// Initializes a new instance of the ComputerService class
         /// </summary>
         /// <param name="computerRepository">Computer repository instance</param>
-        public ComputerService(IComputerRepository computerRepository)
+        /// <param name="manufacturerRepository">Manufacturer repository instance</param>
+        /// <param name="serialNumberValidationService">Serial number validation service</param>
+        public ComputerService(
+            IComputerRepository computerRepository,
+            IManufacturerRepository manufacturerRepository,
+            ISerialNumberValidationService serialNumberValidationService)
         {
             _computerRepository = computerRepository;
-            _serialNumberPatterns = new Dictionary<string, string>
-            {
-                { "Apple", @"^[A-Z]{3}[C-Z0-9][1-9C-NP-RTY][A-Z0-9]{3}[A-Z0-9]{4}$" },
-                { "Dell", @"^[A-Z0-9]{7}$" },
-                { "HP", @"^[A-Z0-9]{3}\d{3}[A-Z0-9]{4}$" },
-                { "Lenovo", @"^\d{2}-[A-Z0-9]{5}$" }
-            };
+            _manufacturerRepository = manufacturerRepository;
+            _serialNumberValidationService = serialNumberValidationService;
         }
 
         #endregion
@@ -42,23 +42,20 @@ namespace VelozientComputers.Core.Services
         /// <inheritdoc/>
         public async Task<IEnumerable<Computer>> GetAllComputersAsync()
         {
-            var computers = await _computerRepository.GetAllWithCurrentAssignmentsAsync();
-            return computers.Select(MapToComputer);
+            return await _computerRepository.GetAllWithCurrentAssignmentsAsync();
         }
 
         /// <inheritdoc/>
         public async Task<Computer> GetComputerByIdAsync(int id)
         {
-            var computer = await _computerRepository.GetWithCurrentAssignmentAsync(id);
-            return computer != null ? MapToComputer(computer) : null;
+            return await _computerRepository.GetWithCurrentAssignmentAsync(id);
         }
 
         /// <inheritdoc/>
         public async Task<IEnumerable<Computer>> GetComputersWithExpiringWarrantyAsync(int daysThreshold = 30)
         {
             var expirationDate = DateTime.UtcNow.AddDays(daysThreshold);
-            var computers = await _computerRepository.FindAsync(c => c.WarrantyExpiryDate <= expirationDate);
-            return computers.Select(MapToComputer);
+            return await _computerRepository.FindAsync(c => c.WarrantyExpirationDate <= expirationDate);
         }
 
         #endregion
@@ -68,28 +65,52 @@ namespace VelozientComputers.Core.Services
         /// <inheritdoc/>
         public async Task<Computer> CreateComputerAsync(Computer computer)
         {
-            if (!await ValidateSerialNumberAsync(computer.Manufacturer, computer.SerialNumber))
-            {
-                throw new ArgumentException("Invalid serial number for the specified manufacturer");
-            }
+            var (isValid, errorMessage) = await _serialNumberValidationService
+                .ValidateSerialNumberAsync(computer.SerialNumber, computer.ComputerManufacturerId);
 
-            var computer = new Computer
+            if (!isValid)
             {
-                Manufacturer = computer.Manufacturer,
-                SerialNumber = computer.SerialNumber,
-                Status = computer.Status,
-                PurchaseDate = computer.PurchaseDate,
-                WarrantyExpiryDate = computer.WarrantyExpiryDate,
-                Specifications = computer.Specifications,
-                ImageUrl = computer.ImageUrl
-            };
+                throw new ArgumentException(errorMessage);
+            }
 
             await _computerRepository.AddAsync(computer);
-            return MapToComputer(computer);
+            return computer;
         }
 
         /// <inheritdoc/>
-        public async Task<Computer> UpdateComputerAsync(int id, Computer computer)
+        public async Task<Computer> UpdateComputerAsync(int id, Computer updatedComputer)
+        {
+            var existingComputer = await _computerRepository.GetByIdAsync(id);
+            if (existingComputer == null)
+            {
+                throw new KeyNotFoundException("Computer not found");
+            }
+
+            if (existingComputer.SerialNumber != updatedComputer.SerialNumber ||
+                existingComputer.ComputerManufacturerId != updatedComputer.ComputerManufacturerId)
+            {
+                var (isValid, errorMessage) = await _serialNumberValidationService
+                    .ValidateSerialNumberAsync(updatedComputer.SerialNumber, updatedComputer.ComputerManufacturerId);
+
+                if (!isValid)
+                {
+                    throw new ArgumentException(errorMessage);
+                }
+            }
+
+            existingComputer.ComputerManufacturerId = updatedComputer.ComputerManufacturerId;
+            existingComputer.SerialNumber = updatedComputer.SerialNumber;
+            existingComputer.PurchaseDate = updatedComputer.PurchaseDate;
+            existingComputer.WarrantyExpirationDate = updatedComputer.WarrantyExpirationDate;
+            existingComputer.Specifications = updatedComputer.Specifications;
+            existingComputer.ImageUrl = updatedComputer.ImageUrl;
+
+            _computerRepository.Update(existingComputer);
+            return existingComputer;
+        }
+
+        /// <inheritdoc/>
+        public async Task<Computer> UpdateComputerStatusAsync(int id, ComputerStatusAssignment statusAssignment)
         {
             var computer = await _computerRepository.GetByIdAsync(id);
             if (computer == null)
@@ -97,37 +118,10 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            if (computer.SerialNumber != computer.SerialNumber &&
-                !await ValidateSerialNumberAsync(computer.Manufacturer, computer.SerialNumber))
-            {
-                throw new ArgumentException("Invalid serial number for the specified manufacturer");
-            }
-
-            computer.Manufacturer = computer.Manufacturer;
-            computer.SerialNumber = computer.SerialNumber;
-            computer.Status = computer.Status;
-            computer.PurchaseDate = computer.PurchaseDate;
-            computer.WarrantyExpiryDate = computer.WarrantyExpiryDate;
-            computer.Specifications = computer.Specifications;
-            computer.ImageUrl = computer.ImageUrl;
-
-            _computerRepository.Update(computer);
-            return MapToComputer(computer);
-        }
-
-        /// <inheritdoc/>
-        public async Task<Computer> UpdateComputerStatusAsync(int id, ComputerStatus status)
-        {
-            var computer = await _computerRepository.GetByIdAsync(id);
-            if (computer == null)
-            {
-                throw new KeyNotFoundException("Computer not found");
-            }
-
-            computer.Status = status.NewStatus;
+            computer.StatusAssignments.Add(statusAssignment);
             _computerRepository.Update(computer);
 
-            return MapToComputer(computer);
+            return computer;
         }
 
         /// <inheritdoc/>
@@ -145,63 +139,16 @@ namespace VelozientComputers.Core.Services
         /// <inheritdoc/>
         public async Task<bool> ValidateSerialNumberAsync(string manufacturer, string serialNumber)
         {
-            if (!_serialNumberPatterns.TryGetValue(manufacturer, out var pattern))
+            var manufacturerEntity = await _manufacturerRepository.FindAsync(m => m.Name == manufacturer);
+            var manufacturerId = manufacturerEntity.FirstOrDefault()?.Id ?? 0;
+
+            if (manufacturerId == 0)
             {
                 return false;
             }
 
-            return Regex.IsMatch(serialNumber, pattern);
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Maps a Computer entity to Computer
-        /// </summary>
-        private Computer MapToComputer(Computer computer)
-        {
-            var warrantyStatus = GetWarrantyStatus(computer.WarrantyExpiryDate);
-            var currentAssignment = computer.Assignments
-                ?.OrderByDescending(a => a.StartDate)
-                .FirstOrDefault(a => a.EndDate == null);
-
-            return new Computer
-            {
-                Id = computer.Id,
-                Manufacturer = computer.Manufacturer,
-                SerialNumber = computer.SerialNumber,
-                Status = computer.Status,
-                PurchaseDate = computer.PurchaseDate,
-                WarrantyExpiryDate = computer.WarrantyExpiryDate,
-                Specifications = computer.Specifications,
-                ImageUrl = computer.ImageUrl,
-                WarrantyStatus = warrantyStatus,
-                CurrentUser = currentAssignment?.User != null
-                    ? new User
-                    {
-                        Id = currentAssignment.User.Id,
-                        FirstName = currentAssignment.User.FirstName,
-                        LastName = currentAssignment.User.LastName,
-                        Email = currentAssignment.User.Email
-                    }
-                    : null
-            };
-        }
-
-        /// <summary>
-        /// Determines the warranty status based on expiry date
-        /// </summary>
-        private string GetWarrantyStatus(DateTime warrantyExpiryDate)
-        {
-            var daysUntilExpiry = (warrantyExpiryDate - DateTime.UtcNow).TotalDays;
-
-            if (daysUntilExpiry <= 0)
-                return "RED";
-            if (daysUntilExpiry <= 30)
-                return "YELLOW";
-            return "GREEN";
+            var (isValid, _) = await _serialNumberValidationService.ValidateSerialNumberAsync(serialNumber, manufacturerId);
+            return isValid;
         }
 
         #endregion

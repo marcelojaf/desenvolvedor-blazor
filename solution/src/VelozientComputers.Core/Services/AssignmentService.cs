@@ -13,6 +13,17 @@ namespace VelozientComputers.Core.Services
 
         private readonly IComputerRepository _computerRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IStatusRepository _statusRepository;
+
+        #endregion
+
+        #region Constants
+
+        private static class ComputerStatus
+        {
+            public const string InUse = "in_use";
+            public const string Available = "available";
+        }
 
         #endregion
 
@@ -23,10 +34,15 @@ namespace VelozientComputers.Core.Services
         /// </summary>
         /// <param name="computerRepository">Computer repository instance</param>
         /// <param name="userRepository">User repository instance</param>
-        public AssignmentService(IComputerRepository computerRepository, IUserRepository userRepository)
+        /// <param name="statusRepository">Status repository instance</param>
+        public AssignmentService(
+            IComputerRepository computerRepository,
+            IUserRepository userRepository,
+            IStatusRepository statusRepository)
         {
             _computerRepository = computerRepository;
             _userRepository = userRepository;
+            _statusRepository = statusRepository;
         }
 
         #endregion
@@ -34,7 +50,7 @@ namespace VelozientComputers.Core.Services
         #region Query Methods
 
         /// <inheritdoc/>
-        public async Task<ComputerAssignment> GetCurrentAssignmentAsync(int computerId)
+        public async Task<ComputerUserAssignment> GetCurrentAssignmentAsync(int computerId)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(computerId);
             if (computer == null)
@@ -42,15 +58,15 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            var currentAssignment = computer.Assignments?
-                .OrderByDescending(a => a.StartDate)
-                .FirstOrDefault(a => a.EndDate == null);
+            var currentAssignment = computer.UserAssignments?
+                .OrderByDescending(a => a.AssignStartDate)
+                .FirstOrDefault(a => a.AssignEndDate == null);
 
-            return currentAssignment != null ? MapToAssignment(currentAssignment) : null;
+            return currentAssignment;
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<ComputerAssignment>> GetComputerAssignmentHistoryAsync(int computerId)
+        public async Task<IEnumerable<ComputerUserAssignment>> GetComputerAssignmentHistoryAsync(int computerId)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(computerId);
             if (computer == null)
@@ -58,13 +74,13 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            return computer.Assignments?
-                .OrderByDescending(a => a.StartDate)
-                .Select(MapToAssignment) ?? Enumerable.Empty<ComputerAssignment>();
+            return computer.UserAssignments?
+                .OrderByDescending(a => a.AssignStartDate)
+                ?? Enumerable.Empty<ComputerUserAssignment>();
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<ComputerAssignment>> GetUserAssignmentHistoryAsync(int userId)
+        public async Task<IEnumerable<ComputerUserAssignment>> GetUserAssignmentHistoryAsync(int userId)
         {
             var user = await _userRepository.GetWithCurrentComputersAsync(userId);
             if (user == null)
@@ -74,7 +90,7 @@ namespace VelozientComputers.Core.Services
 
             return user.ComputerAssignments?
                 .OrderByDescending(a => a.AssignStartDate)
-                .Select(MapToAssignment) ?? Enumerable.Empty<ComputerAssignment>();
+                ?? Enumerable.Empty<ComputerUserAssignment>();
         }
 
         #endregion
@@ -82,7 +98,7 @@ namespace VelozientComputers.Core.Services
         #region Command Methods
 
         /// <inheritdoc/>
-        public async Task<ComputerAssignment> AssignComputerAsync(ComputerAssignment assignment)
+        public async Task<ComputerUserAssignment> AssignComputerAsync(ComputerUserAssignment assignment)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(assignment.ComputerId);
             if (computer == null)
@@ -96,34 +112,48 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("User not found");
             }
 
-            var currentAssignment = computer.Assignments?
-                .OrderByDescending(a => a.StartDate)
-                .FirstOrDefault(a => a.EndDate == null);
+            var currentAssignment = computer.UserAssignments?
+                .OrderByDescending(a => a.AssignStartDate)
+                .FirstOrDefault(a => a.AssignEndDate == null);
 
             if (currentAssignment != null)
             {
                 throw new InvalidOperationException("Computer is already assigned");
             }
 
-            var assignment = new ComputerAssignment
+            var newAssignment = new ComputerUserAssignment
             {
                 ComputerId = assignment.ComputerId,
                 UserId = assignment.UserId,
-                StartDate = assignment.StartDate,
-                EndDate = assignment.EndDate
+                AssignStartDate = DateTime.UtcNow,
+                Computer = computer,
+                User = user
             };
 
-            computer.Status = "In Use";
-            computer.Assignments ??= new List<ComputerAssignment>();
-            computer.Assignments.Add(assignment);
+            var inUseStatus = await _statusRepository.GetByNameAsync(ComputerStatus.InUse);
+            if (inUseStatus == null)
+            {
+                throw new InvalidOperationException("Status 'In Use' not found");
+            }
 
-            _computerRepository.Update(computer);
+            var statusAssignment = new ComputerStatusAssignment
+            {
+                ComputerId = computer.Id,
+                ComputerStatusId = inUseStatus.Id,
+                AssignDate = DateTime.UtcNow
+            };
 
-            return MapToAssignment(assignment);
+            computer.UserAssignments ??= new List<ComputerUserAssignment>();
+            computer.UserAssignments.Add(newAssignment);
+            computer.StatusAssignments.Add(statusAssignment);
+
+            _computerRepository.Update(computer); // Corrigido: removido o Async
+
+            return newAssignment;
         }
 
         /// <inheritdoc/>
-        public async Task<ComputerAssignment> EndAssignmentAsync(int computerId, DateTime endDate)
+        public async Task<ComputerUserAssignment> EndAssignmentAsync(int computerId, DateTime endDate)
         {
             var computer = await _computerRepository.GetWithCurrentAssignmentAsync(computerId);
             if (computer == null)
@@ -131,39 +161,35 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            var currentAssignment = computer.Assignments?
-                .OrderByDescending(a => a.StartDate)
-                .FirstOrDefault(a => a.EndDate == null);
+            var currentAssignment = computer.UserAssignments?
+                .OrderByDescending(a => a.AssignStartDate)
+                .FirstOrDefault(a => a.AssignEndDate == null);
 
             if (currentAssignment == null)
             {
                 throw new InvalidOperationException("Computer is not currently assigned");
             }
 
-            currentAssignment.EndDate = endDate;
-            computer.Status = "Available";
+            currentAssignment.AssignEndDate = endDate;
 
-            _computerRepository.Update(computer);
-
-            return MapToAssignment(currentAssignment);
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Maps a ComputerAssignment entity to ComputerAssignment
-        /// </summary>
-        private ComputerAssignment MapToAssignment(ComputerAssignment assignment)
-        {
-            return new ComputerAssignment
+            var availableStatus = await _statusRepository.GetByNameAsync(ComputerStatus.Available);
+            if (availableStatus == null)
             {
-                ComputerId = assignment.ComputerId,
-                UserId = assignment.UserId,
-                AssignmentStartDate = assignment.AssignmentStartDate,
-                AssignmentEndDate = assignment.AssignmentEndDate
+                throw new InvalidOperationException("Status 'Available' not found");
+            }
+
+            var statusAssignment = new ComputerStatusAssignment
+            {
+                ComputerId = computer.Id,
+                ComputerStatusId = availableStatus.Id,
+                AssignDate = endDate
             };
+
+            computer.StatusAssignments.Add(statusAssignment);
+
+            _computerRepository.Update(computer); // Corrigido: removido o Async
+
+            return currentAssignment;
         }
 
         #endregion

@@ -30,9 +30,8 @@ namespace VelozientComputers.Infrastructure.Data.Mappings
                    .HasForeignKey(e => e.UserId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            // Add index for active assignments
-            builder.HasIndex(e => new { e.ComputerId, e.AssignEndDate })
-                   .HasFilter("[AssignEndDate] IS NULL");
+            // Add index for active assignments (SQLite compatible)
+            builder.HasIndex(e => new { e.ComputerId, e.AssignEndDate });
 
             // Add index for user assignments
             builder.HasIndex(e => new { e.UserId, e.AssignStartDate });

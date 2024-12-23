@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using VelozientComputers.Core.Entities;
+using VelozientComputers.Core.Interfaces.Repository;
+using VelozientComputers.Infrastructure.Data;
 
 namespace VelozientComputers.Infrastructure.Repository
 {
@@ -13,8 +15,8 @@ namespace VelozientComputers.Infrastructure.Repository
         /// <summary>
         /// Initializes a new instance of the ComputerRepository class
         /// </summary>
-        /// <param name="context">Entity Framework context</param>
-        public ComputerRepository(DbContext context) : base(context)
+        /// <param name="context">Database context</param>
+        public ComputerRepository(ApplicationDbContext context) : base(context)
         {
         }
 
@@ -26,8 +28,11 @@ namespace VelozientComputers.Infrastructure.Repository
         public async Task<Computer> GetWithCurrentAssignmentAsync(int id)
         {
             return await _dbSet
-                .Include(c => c.Assignments)
+                .Include(c => c.UserAssignments.Where(a => a.AssignEndDate == null))
                     .ThenInclude(a => a.User)
+                .Include(c => c.StatusAssignments.OrderByDescending(s => s.AssignDate).Take(1))
+                    .ThenInclude(s => s.Status)
+                .Include(c => c.Manufacturer)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
@@ -35,8 +40,11 @@ namespace VelozientComputers.Infrastructure.Repository
         public async Task<IEnumerable<Computer>> GetAllWithCurrentAssignmentsAsync()
         {
             return await _dbSet
-                .Include(c => c.Assignments)
+                .Include(c => c.UserAssignments.Where(a => a.AssignEndDate == null))
                     .ThenInclude(a => a.User)
+                .Include(c => c.StatusAssignments.OrderByDescending(s => s.AssignDate).Take(1))
+                    .ThenInclude(s => s.Status)
+                .Include(c => c.Manufacturer)
                 .ToListAsync();
         }
 

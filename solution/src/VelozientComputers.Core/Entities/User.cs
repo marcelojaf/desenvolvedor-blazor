@@ -10,13 +10,6 @@ namespace VelozientComputers.Core.Entities
     public class User : BaseEntity
     {
         /// <summary>
-        /// Gets or sets the unique identifier for the user.
-        /// </summary>
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        /// <summary>
         /// Gets or sets the user's first name.
         /// </summary>
         [Required]
@@ -39,14 +32,8 @@ namespace VelozientComputers.Core.Entities
         public string EmailAddress { get; set; }
 
         /// <summary>
-        /// Gets or sets the creation date of the user record.
-        /// </summary>
-        [Column("create_dt")]
-        public DateTime CreateDate { get; set; }
-
-        /// <summary>
         /// Gets or sets the collection of computer assignments for this user.
         /// </summary>
-        public ICollection<ComputerUserAssignment> ComputerAssignments { get; set; }
+        public virtual ICollection<ComputerUserAssignment> ComputerAssignments { get; set; }
     }
 }

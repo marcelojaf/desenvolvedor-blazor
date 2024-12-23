@@ -3,19 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace VelozientComputers.Core.Entities
 {
-    // <summary>
+    /// <summary>
     /// Represents an assignment of a computer to a user.
     /// </summary>
     [Table("lnk_computer_user")]
     public class ComputerUserAssignment : BaseEntity
     {
-        /// <summary>
-        /// Gets or sets the unique identifier for the assignment.
-        /// </summary>
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
         /// <summary>
         /// Gets or sets the user ID for this assignment.
         /// </summary>
@@ -48,12 +41,12 @@ namespace VelozientComputers.Core.Entities
         /// Gets or sets the user associated with this assignment.
         /// </summary>
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public virtual User User { get; set; }
 
         /// <summary>
         /// Gets or sets the computer associated with this assignment.
         /// </summary>
         [ForeignKey("ComputerId")]
-        public Computer Computer { get; set; }
+        public virtual Computer Computer { get; set; }
     }
 }

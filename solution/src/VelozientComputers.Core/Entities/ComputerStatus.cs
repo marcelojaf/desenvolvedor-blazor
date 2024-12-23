@@ -10,13 +10,6 @@ namespace VelozientComputers.Core.Entities
     public class ComputerStatus : BaseEntity
     {
         /// <summary>
-        /// Gets or sets the unique identifier for the status.
-        /// </summary>
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        /// <summary>
         /// Gets or sets the localized name of the status.
         /// </summary>
         [Required]
@@ -26,6 +19,6 @@ namespace VelozientComputers.Core.Entities
         /// <summary>
         /// Gets or sets the collection of status assignments.
         /// </summary>
-        public ICollection<ComputerStatusAssignment> StatusAssignments { get; set; }
+        public virtual ICollection<ComputerStatusAssignment> StatusAssignments { get; set; }
     }
 }
