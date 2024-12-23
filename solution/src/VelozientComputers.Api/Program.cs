@@ -12,8 +12,14 @@ builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
 // Configure OpenAPI/Swagger
 OpenApiConfig.AddOpenApi(builder.Services);
 
+// Get connection string
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Initialize database
+DatabaseHelper.InitializeDatabase(connectionString);
+
 // Add database configuration
-builder.Services.AddDatabase(builder.Configuration.GetConnectionString("DefaultConnection"));
+builder.Services.AddDatabase(connectionString);
 
 // Add dependency injection
 builder.Services.AddDependencyInjection();
@@ -21,10 +27,12 @@ builder.Services.AddDependencyInjection();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.MapOpenApi();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Velozient Computers API V1");
+    c.RoutePrefix = string.Empty;
+});
 
 app.UseHttpsRedirection();
 
