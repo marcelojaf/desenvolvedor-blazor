@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using VelozientComputers.Core.Interfaces.Service;
-using VelozientComputers.Infrastructure.Services;
+using VelozientComputers.Core.Services;
 
 namespace VelozientComputers.Infrastructure.Data
 {

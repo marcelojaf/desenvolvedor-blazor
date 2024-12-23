@@ -52,9 +52,9 @@ namespace VelozientComputers.Core.Interfaces.Service
         /// Updates the status of a computer
         /// </summary>
         /// <param name="id">Computer identifier</param>
-        /// <param name="status">Status update data</param>
+        /// <param name="statusAssignment">Status update data</param>
         /// <returns>Updated computer details</returns>
-        Task<Computer> UpdateComputerStatusAsync(int id, Computer status);
+        Task<Computer> UpdateComputerStatusAsync(int id, ComputerStatusAssignment statusAssignment);
 
         /// <summary>
         /// Deletes a computer
