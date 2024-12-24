@@ -1,24 +1,24 @@
-﻿namespace VelozientComputers.Api.DTOs
+﻿namespace VelozientComputers.Shared.DTOs
 {
     /// <summary>
-    /// Data transfer object for user assignment operations
+    /// Data transfer object for computer assignment operations
     /// </summary>
-    public class UserAssignmentDTO
+    public class ComputerAssignmentDTO
     {
         /// <summary>
-        /// Gets or sets the user identifier
+        /// Gets or sets the computer identifier
         /// </summary>
-        public int UserId { get; set; }
+        public int ComputerId { get; set; }
 
         /// <summary>
-        /// Gets or sets the user's full name
+        /// Gets or sets the manufacturer name
         /// </summary>
-        public string UserFullName { get; set; }
+        public string Manufacturer { get; set; }
 
         /// <summary>
-        /// Gets or sets the user's email address
+        /// Gets or sets the computer serial number
         /// </summary>
-        public string EmailAddress { get; set; }
+        public string SerialNumber { get; set; }
 
         /// <summary>
         /// Gets or sets the assignment start date

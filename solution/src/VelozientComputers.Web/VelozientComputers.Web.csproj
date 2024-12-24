@@ -12,10 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VelozientComputers.Api\VelozientComputers.Api.csproj">
-      <Private>false</Private>
-      <ExcludeAssets>runtime</ExcludeAssets>
-    </ProjectReference>
+    <ProjectReference Include="..\VelozientComputers.Shared\VelozientComputers.Shared.csproj" />
   </ItemGroup>
 
 </Project>

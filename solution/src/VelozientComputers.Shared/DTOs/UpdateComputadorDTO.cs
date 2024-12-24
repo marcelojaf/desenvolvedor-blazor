@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace VelozientComputers.Api.DTOs
+namespace VelozientComputers.Shared.DTOs
 {
     /// <summary>
     /// Data transfer object for computer update operations

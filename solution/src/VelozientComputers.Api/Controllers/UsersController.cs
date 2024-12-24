@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using VelozientComputers.Api.DTOs;
 using VelozientComputers.Core.Entities;
 using VelozientComputers.Core.Interfaces.Service;
+using VelozientComputers.Shared.DTOs;
 
 namespace VelozientComputers.Api.Controllers
 {

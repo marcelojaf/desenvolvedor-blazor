@@ -1,4 +1,4 @@
-﻿namespace VelozientComputers.Api.DTOs
+﻿namespace VelozientComputers.Shared.DTOs
 {
     /// <summary>
     /// Data transfer object for user operations

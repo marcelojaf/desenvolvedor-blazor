@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using VelozientComputers.Core.Validations;
 
-namespace VelozientComputers.Api.DTOs
+namespace VelozientComputers.Shared.DTOs
 {
     /// <summary>
     /// Data transfer object for computer creation operations

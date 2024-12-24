@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using VelozientComputers.Api.DTOs;
 using VelozientComputers.Core.Entities;
+using VelozientComputers.Shared.DTOs;
 
 namespace VelozientComputers.Api.Configurations
 {

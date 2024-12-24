@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\VelozientComputers.Core\VelozientComputers.Core.csproj" />
     <ProjectReference Include="..\VelozientComputers.Infrastructure\VelozientComputers.Infrastructure.csproj" />
+    <ProjectReference Include="..\VelozientComputers.Shared\VelozientComputers.Shared.csproj" />
   </ItemGroup>
 
 </Project>

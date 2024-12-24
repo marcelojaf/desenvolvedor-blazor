@@ -1,12 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using VelozientComputers.Infrastructure.Data;
 
-namespace VelozientComputers.Api.DTOs
+namespace VelozientComputers.Shared.DTOs
 {
     /// <summary>
-    /// Data transfer object for user update operations
+    /// Data transfer object for user creation operations
     /// </summary>
-    public class UpdateUserDTO
+    public class CreateUserDTO
     {
         /// <summary>
         /// Gets or sets the user's first name
@@ -25,9 +25,9 @@ namespace VelozientComputers.Api.DTOs
         /// <summary>
         /// Gets or sets the user's email address
         /// </summary>
-        [Required(ErrorMessage = "Email is required")]
+        [Required(ErrorMessage = "Email address is required")]
         [EmailAddress(ErrorMessage = "Invalid email address")]
-        [StringLength(DbConstants.EmailLength, ErrorMessage = "Email cannot exceed {1} characters")]
-        public string Email { get; set; }
+        [StringLength(DbConstants.EmailLength, ErrorMessage = "Email address cannot exceed {1} characters")]
+        public string EmailAddress { get; set; }
     }
 }
