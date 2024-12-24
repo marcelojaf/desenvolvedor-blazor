@@ -24,6 +24,16 @@ builder.Services.AddDatabase(connectionString);
 // Add dependency injection
 builder.Services.AddDependencyInjection();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -33,6 +43,8 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Velozient Computers API V1");
     c.RoutePrefix = string.Empty;
 });
+
+app.UseCors("AllowAllOrigins");
 
 app.UseHttpsRedirection();
 

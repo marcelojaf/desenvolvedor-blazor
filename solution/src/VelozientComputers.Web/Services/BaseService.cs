@@ -37,10 +37,10 @@ namespace VelozientComputers.Web.Services
         /// <returns>Collection of entities</returns>
         public virtual async Task<IEnumerable<TEntity>> GetAllAsync()
         {
-            var response = await _httpClient.GetAsync(_baseUrl);
-            var apiResponse = await HandleResponseAsync<IEnumerable<TEntity>>(response);
-            return apiResponse.Data;
-        }
+                var response = await _httpClient.GetAsync(_baseUrl);
+                var apiResponse = await HandleResponseAsync<IEnumerable<TEntity>>(response);
+                return apiResponse.Data;
+            }
 
         /// <summary>
         /// Gets an entity by its identifier
