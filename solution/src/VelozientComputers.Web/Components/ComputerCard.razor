@@ -1,0 +1,121 @@
+﻿@using VelozientComputers.Shared.DTOs
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <!-- Computer Image -->
+            <div class="col-2">
+                @if (string.IsNullOrEmpty(Computer.ImageUrl))
+                {
+                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
+                        <span class="text-muted">No Image</span>
+                    </div>
+                }
+                else
+                {
+                    <img src="@Computer.ImageUrl" alt="Computer" class="img-fluid rounded" style="height: 120px; object-fit: cover;" />
+                }
+            </div>
+
+            <!-- Computer Details -->
+            <div class="col-9">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong>Serial Number:</strong> @Computer.SerialNumber
+                        </div>
+                        <div class="mb-2">
+                            <strong>Manufacturer:</strong> @Computer.Manufacturer
+                        </div>
+                        <div class="mb-2">
+                            <strong>Status:</strong> @Computer.Status
+                        </div>
+                        <div>
+                            <strong>Specifications:</strong> @Computer.Specifications
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong>Purchased on:</strong> @Computer.PurchaseDate.ToShortDateString()
+                        </div>
+                        <div class="mb-2">
+                            <strong>Warranty until:</strong>
+                            <span class="@GetWarrantyClass()">
+                                @Computer.WarrantyExpirationDate.ToShortDateString()
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Assigned on:</strong>
+                            @if (Computer.CurrentAssignment != null)
+                            {
+                                @Computer.CurrentAssignment.AssignStartDate.ToShortDateString()
+                            }
+                        </div>
+                        <div>
+                            <strong>Assigned to:</strong>
+                            @if (Computer.CurrentAssignment != null)
+                            {
+                                @Computer.CurrentAssignment.UserFullName
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-1">
+                <div class="btn-group-vertical">
+                    <button @onclick="OnAssignClick" class="btn btn-primary mb-2" title="Assign User">
+                        <i class="bi bi-person-plus"></i>
+                    </button>
+                    <button @onclick="OnEditClick" class="btn btn-warning mb-2" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button @onclick="OnDeleteClick" class="btn btn-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public ComputerDTO Computer { get; set; }
+
+    [Parameter]
+    public EventCallback<ComputerDTO> OnAssign { get; set; }
+
+    [Parameter]
+    public EventCallback<ComputerDTO> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<ComputerDTO> OnDelete { get; set; }
+
+    private string GetWarrantyClass()
+    {
+        var daysUntilExpiration = (Computer.WarrantyExpirationDate - DateTime.Now).TotalDays;
+
+        if (daysUntilExpiration < 0)
+            return "text-danger";
+        if (daysUntilExpiration <= 30)
+            return "text-warning";
+        return "text-success";
+    }
+
+    private async Task OnAssignClick()
+    {
+        await OnAssign.InvokeAsync(Computer);
+    }
+
+    private async Task OnEditClick()
+    {
+        await OnEdit.InvokeAsync(Computer);
+    }
+
+    private async Task OnDeleteClick()
+    {
+        await OnDelete.InvokeAsync(Computer);
+    }
+}

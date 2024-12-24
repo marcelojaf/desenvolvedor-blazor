@@ -1,0 +1,184 @@
+﻿@using VelozientComputers.Shared.DTOs
+
+<div class="modal @(IsVisible ? "d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Computer</h5>
+                <button type="button" class="btn-close" @onclick="OnClose"></button>
+            </div>
+            <div class="modal-body">
+                @if (Computer != null)
+                {
+                    <div class="mb-4">
+                        <h6>Computer Details</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="mb-1"><strong>Serial Number:</strong> @Computer.SerialNumber</p>
+                                <p class="mb-1"><strong>Manufacturer:</strong> @Computer.Manufacturer</p>
+                                <p class="mb-0"><strong>Status:</strong> @Computer.Status</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Computer.CurrentAssignment != null)
+                    {
+                        <div class="mb-4">
+                            <h6>Current Assignment</h6>
+                            <div class="card">
+                                <div class="card-body">
+                                    <p class="mb-1"><strong>User:</strong> @Computer.CurrentAssignment.UserFullName</p>
+                                    <p class="mb-1"><strong>Assigned on:</strong> @Computer.CurrentAssignment.AssignStartDate.ToShortDateString()</p>
+                                    <div class="mt-3">
+                                        <button class="btn btn-warning" @onclick="ShowUnassignConfirmation">
+                                            <i class="bi bi-person-dash me-2"></i>Unassign
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="@assignmentModel" OnValidSubmit="HandleValidSubmit">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label">Select User</label>
+                                <InputSelect class="form-select" @bind-Value="assignmentModel.UserId">
+                                    <option value="">Choose a user...</option>
+                                    @if (Users != null)
+                                    {
+                                        @foreach (var user in Users)
+                                        {
+                                            <option value="@user.Id">@user.FirstName @user.LastName</option>
+                                        }
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => assignmentModel.UserId)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Assignment Start Date</label>
+                                <InputDate class="form-control" @bind-Value="assignmentModel.StartDate" />
+                                <ValidationMessage For="@(() => assignmentModel.StartDate)" />
+                            </div>
+
+                            <div class="modal-footer px-0 pb-0">
+                                <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-person-plus me-2"></i>Assign
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (showUnassignConfirm)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Unassignment</h5>
+                    <button type="button" class="btn-close" @onclick="() => showUnassignConfirm = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to unassign this computer from @Computer?.CurrentAssignment?.UserFullName?</p>
+                    <div class="mb-3">
+                        <label class="form-label">End Date</label>
+                        <InputDate class="form-control" @bind-Value="unassignDate" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => showUnassignConfirm = false">Cancel</button>
+                    <button type="button" class="btn btn-warning" @onclick="HandleUnassign">
+                        <i class="bi bi-person-dash me-2"></i>Confirm Unassign
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public ComputerDTO Computer { get; set; }
+
+    [Parameter]
+    public List<UserDTO> Users { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnAssign { get; set; }
+
+    [Parameter]
+    public EventCallback OnUnassign { get; set; }
+
+    private AssignmentDTO assignmentModel = new();
+    private bool showUnassignConfirm;
+    private DateTime unassignDate = DateTime.Today;
+
+    protected override void OnParametersSet()
+    {
+        if (Computer != null)
+        {
+            assignmentModel = new AssignmentDTO
+                {
+                    ComputerId = Computer.Id,
+                    StartDate = DateTime.Today
+                };
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await OnAssign.InvokeAsync(assignmentModel.UserId);
+        await CloseModal();
+    }
+
+    private void ShowUnassignConfirmation()
+    {
+        showUnassignConfirm = true;
+    }
+
+    private async Task HandleUnassign()
+    {
+        await OnUnassign.InvokeAsync();
+        showUnassignConfirm = false;
+        await CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        showUnassignConfirm = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task OnClose()
+    {
+        await CloseModal();
+    }
+
+    public class AssignmentDTO
+    {
+        public int ComputerId { get; set; }
+        public int UserId { get; set; }
+        public DateTime StartDate { get; set; }
+    }
+
+    public class UnassignmentDTO
+    {
+        public int ComputerId { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+}

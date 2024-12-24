@@ -1,0 +1,233 @@
+﻿@page "/"
+@using VelozientComputers.Shared.DTOs
+@using VelozientComputers.Web.Services.Interfaces
+@inject IComputerService ComputerService
+@inject IUserService UserService
+@inject IAssignmentService AssignmentService
+@inject IJSRuntime JSRuntime
+
+<div class="page-container">
+    <nav class="navbar bg-white border-bottom px-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h4">Velozient Computers</span>
+            <button class="btn btn-success" @onclick="() => ShowComputerModal(null)">
+                <i class="bi bi-plus-circle me-2"></i>Add computer
+            </button>
+        </div>
+    </nav>
+
+    <div class="content-container px-4">
+        @if (loading)
+        {
+            <div class="text-center mt-4">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (computers == null || !computers.Any())
+        {
+            <div class="alert alert-info mt-4">
+                No computers found. Click the "Add computer" button to get started.
+            </div>
+        }
+        else
+        {
+            <div class="computers-list">
+                @foreach (var computer in computers)
+                {
+                    <ComputerCard Computer="computer"
+                                  OnAssign="(computer) => ShowAssignmentModal(computer)"
+                                  OnEdit="(computer) => ShowComputerModal(computer)"
+                                  OnDelete="DeleteComputer" />
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<ComputerModal @ref="computerModal"
+               IsVisible="showComputerModal"
+               Computer="selectedComputer"
+               IsVisibleChanged="(visible) => showComputerModal = visible"
+               OnSave="SaveComputer" />
+
+<AssignmentModal @ref="assignmentModal"
+                 IsVisible="showAssignmentModal"
+                 Computer="selectedComputer"
+                 Users="users"
+                 IsVisibleChanged="(visible) => showAssignmentModal = visible"
+                 OnAssign="AssignComputer"
+                 OnUnassign="UnassignComputer" />
+
+<style>
+    .page-container {
+        min-height: 100vh;
+        background-color: #f8f9fa;
+    }
+
+    .content-container {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .computers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .navbar {
+        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    }
+</style>
+
+@code {
+    private List<ComputerDTO> computers;
+    private List<UserDTO> users;
+    private bool loading = true;
+    private ComputerDTO selectedComputer;
+    private bool showComputerModal;
+    private bool showAssignmentModal;
+    private ComputerModal computerModal;
+    private AssignmentModal assignmentModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            loading = true;
+            computers = (await ComputerService.GetAllAsync()).ToList();
+            users = (await UserService.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            // TODO: Add proper error handling/notification
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ShowComputerModal(ComputerDTO computer)
+    {
+        selectedComputer = computer;
+        showComputerModal = true;
+    }
+
+    private void ShowAssignmentModal(ComputerDTO computer)
+    {
+        selectedComputer = computer;
+        showAssignmentModal = true;
+    }
+
+    private async Task SaveComputer(ComputerDTO computer)
+    {
+        try
+        {
+            loading = true;
+            if (computer.Id == 0)
+            {
+                var createDto = new CreateComputerDTO
+                    {
+                        Manufacturer = computer.Manufacturer,
+                        SerialNumber = computer.SerialNumber,
+                        Status = computer.Status,
+                        PurchaseDate = computer.PurchaseDate,
+                        WarrantyExpiryDate = computer.WarrantyExpirationDate,
+                        Specifications = computer.Specifications,
+                        ImageUrl = computer.ImageUrl
+                    };
+                await ComputerService.CreateAsync(createDto);
+            }
+            else
+            {
+                var updateDto = new UpdateComputerDTO
+                    {
+                        Status = computer.Status,
+                        WarrantyExpiryDate = computer.WarrantyExpirationDate,
+                        Specifications = computer.Specifications,
+                        ImageUrl = computer.ImageUrl
+                    };
+                await ComputerService.UpdateAsync(computer.Id, updateDto);
+            }
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            // TODO: Add proper error handling/notification
+            Console.WriteLine($"Error saving computer: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task DeleteComputer(ComputerDTO computer)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this computer?"))
+        {
+            try
+            {
+                loading = true;
+                await ComputerService.DeleteAsync(computer.Id);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                // TODO: Add proper error handling/notification
+                Console.WriteLine($"Error deleting computer: {ex.Message}");
+            }
+            finally
+            {
+                loading = false;
+            }
+        }
+    }
+
+    private async Task AssignComputer(int userId)
+    {
+        try
+        {
+            loading = true;
+            await AssignmentService.AssignComputerToUserAsync(selectedComputer.Id, userId);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            // TODO: Add proper error handling/notification
+            Console.WriteLine($"Error assigning computer: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task UnassignComputer()
+    {
+        try
+        {
+            loading = true;
+            await AssignmentService.EndAssignmentAsync(selectedComputer.Id);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            // TODO: Add proper error handling/notification
+            Console.WriteLine($"Error unassigning computer: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

@@ -1,0 +1,183 @@
+﻿@using VelozientComputers.Shared.DTOs
+@using System.ComponentModel.DataAnnotations
+
+<div class="modal @(IsVisible ? "d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(Computer?.Id > 0 ? "Edit" : "Add") Computer</h5>
+                <button type="button" class="btn-close" @onclick="OnClose"></button>
+            </div>
+            <EditForm Model="@computerModel" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Manufacturer</label>
+                            <InputSelect class="form-select" @bind-Value="computerModel.Manufacturer">
+                                <option value="">Select manufacturer...</option>
+                                <option value="Apple">Apple</option>
+                                <option value="Dell">Dell</option>
+                                <option value="HP">HP</option>
+                                <option value="Lenovo">Lenovo</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => computerModel.Manufacturer)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Serial Number</label>
+                            <InputText class="form-control" @bind-Value="computerModel.SerialNumber" />
+                            <ValidationMessage For="@(() => computerModel.SerialNumber)" />
+                            @if (serialNumberError != null)
+                            {
+                                <div class="text-danger">@serialNumberError</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <InputSelect class="form-select" @bind-Value="computerModel.Status">
+                                <option value="">Select status...</option>
+                                <option value="New">New</option>
+                                <option value="In Use">In Use</option>
+                                <option value="Available">Available</option>
+                                <option value="In Maintenance">In Maintenance</option>
+                                <option value="Retired">Retired</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => computerModel.Status)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Image URL</label>
+                            <InputText class="form-control" @bind-Value="computerModel.ImageUrl" />
+                            <ValidationMessage For="@(() => computerModel.ImageUrl)" />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Purchase Date</label>
+                            <InputDate class="form-control" @bind-Value="computerModel.PurchaseDate" />
+                            <ValidationMessage For="@(() => computerModel.PurchaseDate)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Warranty Expiry Date</label>
+                            <InputDate class="form-control" @bind-Value="computerModel.WarrantyExpiryDate" />
+                            <ValidationMessage For="@(() => computerModel.WarrantyExpiryDate)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Specifications</label>
+                        <InputTextArea class="form-control" @bind-Value="computerModel.Specifications" rows="3" />
+                        <ValidationMessage For="@(() => computerModel.Specifications)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public ComputerDTO Computer { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<ComputerDTO> OnSave { get; set; }
+
+    private CreateComputerDTO computerModel = new();
+    private string serialNumberError;
+
+    protected override void OnParametersSet()
+    {
+        if (Computer != null)
+        {
+            computerModel = new CreateComputerDTO
+                {
+                    Manufacturer = Computer.Manufacturer,
+                    SerialNumber = Computer.SerialNumber,
+                    Status = Computer.Status,
+                    PurchaseDate = Computer.PurchaseDate,
+                    WarrantyExpiryDate = Computer.WarrantyExpirationDate,
+                    Specifications = Computer.Specifications,
+                    ImageUrl = Computer.ImageUrl
+                };
+        }
+        else
+        {
+            computerModel = new CreateComputerDTO
+                {
+                    PurchaseDate = DateTime.Today,
+                    WarrantyExpiryDate = DateTime.Today.AddYears(1)
+                };
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (ValidateSerialNumber())
+        {
+            var computerDTO = new ComputerDTO
+                {
+                    Id = Computer?.Id ?? 0,
+                    Manufacturer = computerModel.Manufacturer,
+                    SerialNumber = computerModel.SerialNumber,
+                    Status = computerModel.Status,
+                    PurchaseDate = computerModel.PurchaseDate,
+                    WarrantyExpirationDate = computerModel.WarrantyExpiryDate,
+                    Specifications = computerModel.Specifications,
+                    ImageUrl = computerModel.ImageUrl
+                };
+
+            await OnSave.InvokeAsync(computerDTO);
+            await CloseModal();
+        }
+    }
+
+    private bool ValidateSerialNumber()
+    {
+        var pattern = computerModel.Manufacturer switch
+        {
+            "Apple" => @"^[A-Z]{3}[C-Z0-9][1-9C-NP-RTY][A-Z0-9]{3}[A-Z0-9]{4}$",
+            "Dell" => @"^[A-Z0-9]{7}$",
+            "HP" => @"^[A-Z0-9]{3}\d{3}[A-Z0-9]{4}$",
+            "Lenovo" => @"^\d{2}-[A-Z0-9]{5}$",
+            _ => null
+        };
+
+        if (pattern == null)
+        {
+            serialNumberError = "Please select a manufacturer first";
+            return false;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(computerModel.SerialNumber ?? "", pattern))
+        {
+            serialNumberError = "Invalid serial number format for selected manufacturer";
+            return false;
+        }
+
+        serialNumberError = null;
+        return true;
+    }
+
+    private async Task CloseModal()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task OnClose()
+    {
+        await CloseModal();
+    }
+}

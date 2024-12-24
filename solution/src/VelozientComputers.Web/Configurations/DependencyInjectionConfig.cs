@@ -18,7 +18,7 @@ public static class DependencyInjectionConfig
         // Register HTTP client
         services.AddScoped(sp => new HttpClient
         {
-            BaseAddress = new Uri("http://localhost:5000")  // API base URL
+            BaseAddress = new Uri("http://localhost:5123")  // API base URL
         });
 
         // Register services

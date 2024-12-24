@@ -10,6 +10,4 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Add services to DI
 builder.Services.AddDependencyInjection();
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-
 await builder.Build().RunAsync();
