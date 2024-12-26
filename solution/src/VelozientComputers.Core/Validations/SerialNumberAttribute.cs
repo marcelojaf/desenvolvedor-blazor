@@ -20,7 +20,6 @@ namespace VelozientComputers.Core.Validations
         /// <returns>ValidationResult.Success if validation passes, ValidationResult with error message otherwise.</returns>
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            // Validate null value
             if (value == null)
             {
                 return new ValidationResult("Serial number is required.");
@@ -36,7 +35,7 @@ namespace VelozientComputers.Core.Validations
             var manufacturer = manufacturerProperty.GetValue(validationContext.ObjectInstance)?.ToString();
             if (string.IsNullOrEmpty(manufacturer))
             {
-                return ValidationResult.Success; // Let the manufacturer's own validation handle this
+                return ValidationResult.Success;
             }
 
             // Convert manufacturer name to ID
@@ -51,12 +50,14 @@ namespace VelozientComputers.Core.Validations
 
             if (manufacturerId == 0)
             {
-                return ValidationResult.Success; // Let the manufacturer's own validation handle this
+                return new ValidationResult("Invalid manufacturer.");
             }
+
+            var serialNumber = value.ToString();
 
             // Validate using the core validation logic
             var (isValid, errorMessage) = SerialNumberValidation.ValidateSerialNumber(
-                value.ToString()!,
+                serialNumber!,
                 manufacturerId);
 
             return isValid

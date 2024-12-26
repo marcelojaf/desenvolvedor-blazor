@@ -1,0 +1,29 @@
+﻿@if (Show)
+{
+    <div class="alert @AlertClass alert-dismissible fade show" role="alert">
+        @Message
+        <button type="button" class="btn-close" @onclick="Dismiss" aria-label="Close"></button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Show { get; set; }
+
+    [Parameter]
+    public string Message { get; set; } = "";
+
+    [Parameter]
+    public string Type { get; set; } = "danger";
+
+    [Parameter]
+    public EventCallback<bool> ShowChanged { get; set; }
+
+    private string AlertClass => $"alert-{Type}";
+
+    private async Task Dismiss()
+    {
+        Show = false;
+        await ShowChanged.InvokeAsync(false);
+    }
+}

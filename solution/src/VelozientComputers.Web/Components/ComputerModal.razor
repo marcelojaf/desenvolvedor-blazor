@@ -10,6 +10,15 @@
                 <h5 class="modal-title">@(Computer?.Id > 0 ? "Edit" : "Add") Computer</h5>
                 <button type="button" class="btn-close" @onclick="OnClose"></button>
             </div>
+
+            @if (showError)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
+                    @errorMessage
+                    <button type="button" class="btn-close" @onclick="DismissError" aria-label="Close"></button>
+                </div>
+            }
+
             <EditForm Model="@computerModel" OnValidSubmit="HandleValidSubmit">
                 <DataAnnotationsValidator />
                 <div class="modal-body">
@@ -99,15 +108,25 @@
     public EventCallback<bool> IsVisibleChanged { get; set; }
 
     /// <summary>
-    /// Callback for when a computer is saved.
+    /// Callback for when a computer is saved, returns the result of the operation.
     /// </summary>
     [Parameter]
-    public EventCallback<ComputerDTO> OnSave { get; set; }
+    public EventCallback<(ComputerDTO Computer, Action<string> SetError)> OnSave { get; set; }
 
     /// <summary>
-    /// The model used for the form, using the existing CreateComputerDTO.
+    /// The model used for the form.
     /// </summary>
     private CreateComputerDTO computerModel = new();
+
+    /// <summary>
+    /// Controls the visibility of the error message.
+    /// </summary>
+    private bool showError;
+
+    /// <summary>
+    /// The error message to display.
+    /// </summary>
+    private string errorMessage = "";
 
     /// <summary>
     /// Initializes or resets the form model when parameters change.
@@ -136,6 +155,10 @@
                     Status = ComputerStatusEnum.New.ToString()
                 };
         }
+
+        // Reset error state
+        showError = false;
+        errorMessage = "";
     }
 
     /// <summary>
@@ -144,20 +167,47 @@
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleValidSubmit()
     {
-        var computerDTO = new ComputerDTO
-            {
-                Id = Computer?.Id ?? 0,
-                Manufacturer = computerModel.Manufacturer,
-                SerialNumber = computerModel.SerialNumber,
-                Status = Enum.Parse<ComputerStatusEnum>(computerModel.Status),
-                PurchaseDate = computerModel.PurchaseDate,
-                WarrantyExpirationDate = computerModel.WarrantyExpiryDate,
-                Specifications = computerModel.Specifications,
-                ImageUrl = computerModel.ImageUrl
-            };
+        try
+        {
+            var computerDTO = new ComputerDTO
+                {
+                    Id = Computer?.Id ?? 0,
+                    Manufacturer = computerModel.Manufacturer,
+                    SerialNumber = computerModel.SerialNumber,
+                    Status = Enum.Parse<ComputerStatusEnum>(computerModel.Status),
+                    PurchaseDate = computerModel.PurchaseDate,
+                    WarrantyExpirationDate = computerModel.WarrantyExpiryDate,
+                    Specifications = computerModel.Specifications,
+                    ImageUrl = computerModel.ImageUrl
+                };
 
-        await OnSave.InvokeAsync(computerDTO);
-        await CloseModal();
+            // Pass the computer and error handler to the parent
+            await OnSave.InvokeAsync((computerDTO, ShowError));
+        }
+        catch (Exception ex)
+        {
+            ShowError("An unexpected error occurred. Please try again.");
+        }
+    }
+
+    /// <summary>
+    /// Shows an error message in the modal.
+    /// </summary>
+    /// <param name="message">The error message to display.</param>
+    private void ShowError(string message)
+    {
+        errorMessage = message;
+        showError = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Dismisses the error message.
+    /// </summary>
+    private void DismissError()
+    {
+        showError = false;
+        errorMessage = "";
     }
 
     /// <summary>
@@ -166,6 +216,7 @@
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task CloseModal()
     {
+        DismissError();
         await IsVisibleChanged.InvokeAsync(false);
     }
 

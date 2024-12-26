@@ -52,7 +52,7 @@
                IsVisible="showComputerModal"
                Computer="selectedComputer"
                IsVisibleChanged="HandleComputerModalVisibilityChanged"
-               OnSave="SaveComputer" />
+               OnSave="HandleComputerSave" />
 
 <AssignmentModal @ref="assignmentModal"
                  IsVisible="showAssignmentModal"
@@ -177,8 +177,8 @@
     /// Saves a new or updated computer
     /// </summary>
     /// <param name="computer">The computer to save</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task SaveComputer(ComputerDTO computer)
+    /// <returns>A tuple with success flag and error message if any.</returns>
+    private async Task<(bool Success, string ErrorMessage)> SaveComputer(ComputerDTO computer)
     {
         try
         {
@@ -209,11 +209,15 @@
                 await ComputerService.UpdateAsync(computer.Id, updateDto);
             }
             await LoadData();
+            return (true, null);
+        }
+        catch (HttpRequestException ex)
+        {
+            return (false, "Failed to save computer. Please check your input and try again.");
         }
         catch (Exception ex)
         {
-            // TODO: Add proper error handling/notification
-            Console.WriteLine($"Error saving computer: {ex.Message}");
+            return (false, "An unexpected error occurred. Please try again.");
         }
         finally
         {
@@ -288,6 +292,74 @@
         {
             // TODO: Add proper error handling/notification
             Console.WriteLine($"Error unassigning computer: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    /// <summary>
+    /// Handles the save operation for a computer, either creating a new one or updating an existing one.
+    /// </summary>
+    /// <param name="args">A tuple containing the computer data and an action to set error messages.</param>
+    /// <param name="args.Computer">The computer data to be saved.</param>
+    /// <param name="args.SetError">An action to display error messages in the modal.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task HandleComputerSave((ComputerDTO Computer, Action<string> SetError) args)
+    {
+        try
+        {
+            loading = true;
+            if (args.Computer.Id == 0)
+            {
+                var createDto = new CreateComputerDTO
+                    {
+                        Manufacturer = args.Computer.Manufacturer,
+                        SerialNumber = args.Computer.SerialNumber,
+                        Status = args.Computer.Status.ToString(),
+                        PurchaseDate = args.Computer.PurchaseDate,
+                        WarrantyExpiryDate = args.Computer.WarrantyExpirationDate,
+                        Specifications = args.Computer.Specifications,
+                        ImageUrl = args.Computer.ImageUrl
+                    };
+
+                try
+                {
+                    await ComputerService.CreateAsync(createDto);
+                    await LoadData();
+                    showComputerModal = false;
+                }
+                catch (HttpRequestException ex)
+                {
+                    args.SetError("Failed to save computer. Please check your input and try again.");
+                }
+            }
+            else
+            {
+                var updateDto = new UpdateComputerDTO
+                    {
+                        Status = args.Computer.Status.ToString(),
+                        WarrantyExpiryDate = args.Computer.WarrantyExpirationDate,
+                        Specifications = args.Computer.Specifications,
+                        ImageUrl = args.Computer.ImageUrl
+                    };
+
+                try
+                {
+                    await ComputerService.UpdateAsync(args.Computer.Id, updateDto);
+                    await LoadData();
+                    showComputerModal = false;
+                }
+                catch (HttpRequestException ex)
+                {
+                    args.SetError("Failed to update computer. Please try again.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            args.SetError("An unexpected error occurred. Please try again.");
         }
         finally
         {
