@@ -23,12 +23,13 @@ namespace VelozientComputers.Api.Controllers
             };
         }
 
-        protected IActionResult ApiResponse(HttpStatusCode statusCode = HttpStatusCode.OK)
+        protected IActionResult ApiResponse(HttpStatusCode statusCode = HttpStatusCode.OK, string message = "")
         {
             return new ObjectResult(new ApiResponse
             {
                 StatusCode = statusCode,
-                Success = IsSuccessStatusCode(statusCode)
+                Success = IsSuccessStatusCode(statusCode),
+                Message = message
             })
             {
                 StatusCode = (int)statusCode

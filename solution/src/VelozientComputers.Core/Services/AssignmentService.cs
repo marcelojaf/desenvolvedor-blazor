@@ -147,7 +147,7 @@ namespace VelozientComputers.Core.Services
             computer.UserAssignments.Add(newAssignment);
             computer.StatusAssignments.Add(statusAssignment);
 
-            _computerRepository.Update(computer); // Corrigido: removido o Async
+            await _computerRepository.UpdateAsync(computer);
 
             return newAssignment;
         }
@@ -187,7 +187,7 @@ namespace VelozientComputers.Core.Services
 
             computer.StatusAssignments.Add(statusAssignment);
 
-            _computerRepository.Update(computer); // Corrigido: removido o Async
+            await _computerRepository.UpdateAsync(computer);
 
             return currentAssignment;
         }

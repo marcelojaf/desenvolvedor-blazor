@@ -85,7 +85,7 @@ namespace VelozientComputers.Core.Services
             existingUser.LastName = updatedUser.LastName;
             existingUser.EmailAddress = updatedUser.EmailAddress;
 
-            _userRepository.Update(existingUser);
+            await _userRepository.UpdateAsync(existingUser);
             return existingUser;
         }
 
@@ -98,7 +98,7 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("User not found");
             }
 
-            _userRepository.Remove(user);
+            await _userRepository.RemoveAsync(user);
         }
 
         #endregion

@@ -58,19 +58,19 @@ namespace VelozientComputers.Core.Interfaces.Repository
         /// Updates an existing entity
         /// </summary>
         /// <param name="entity">Entity to update</param>
-        void Update(T entity);
+        Task UpdateAsync(T entity);
 
         /// <summary>
         /// Removes an entity
         /// </summary>
         /// <param name="entity">Entity to remove</param>
-        void Remove(T entity);
+        Task RemoveAsync(T entity);
 
         /// <summary>
         /// Removes multiple entities
         /// </summary>
         /// <param name="entities">Collection of entities to remove</param>
-        void RemoveRange(IEnumerable<T> entities);
+        Task RemoveRangeAsync(IEnumerable<T> entities);
 
         #endregion
     }

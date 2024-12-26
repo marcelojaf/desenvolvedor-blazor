@@ -73,31 +73,73 @@ namespace VelozientComputers.Infrastructure.Repository
         public virtual async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
+            await SaveChangesAsync();
+
+            if (entity.Id == 0)
+            {
+                var entry = _context.Entry(entity);
+                entry.CurrentValues.SetValues(await _dbSet.FindAsync(entry.Property("Id").CurrentValue));
+            }
         }
 
         /// <inheritdoc/>
         public virtual async Task AddRangeAsync(IEnumerable<T> entities)
         {
             await _dbSet.AddRangeAsync(entities);
+            await SaveChangesAsync();
+
+            foreach (var entity in entities)
+            {
+                if (entity.Id == 0)
+                {
+                    var entry = _context.Entry(entity);
+                    entry.CurrentValues.SetValues(await _dbSet.FindAsync(entry.Property("Id").CurrentValue));
+                }
+            }
         }
 
         /// <inheritdoc/>
-        public virtual void Update(T entity)
+        public virtual async Task UpdateAsync(T entity)
         {
             _dbSet.Attach(entity);
             _context.Entry(entity).State = EntityState.Modified;
+            await SaveChangesAsync();
         }
 
         /// <inheritdoc/>
-        public virtual void Remove(T entity)
+        public virtual async Task RemoveAsync(T entity)
         {
             _dbSet.Remove(entity);
+            await SaveChangesAsync();
         }
 
         /// <inheritdoc/>
-        public virtual void RemoveRange(IEnumerable<T> entities)
+        public virtual async Task RemoveRangeAsync(IEnumerable<T> entities)
         {
             _dbSet.RemoveRange(entities);
+            await SaveChangesAsync();
+        }
+
+        #endregion
+
+        #region SaveChanges
+
+        /// <summary>
+        /// Saves all changes made in this context to the database
+        /// </summary>
+        /// <returns>The number of entities written to the database</returns>
+        protected async Task<int> SaveChangesAsync()
+        {
+            return await _context.SaveChangesAsync();
+        }
+
+        #endregion
+
+        #region IDisposable
+
+        public void Dispose()
+        {
+            _context?.Dispose();
         }
 
         #endregion

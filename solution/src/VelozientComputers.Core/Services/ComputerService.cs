@@ -105,7 +105,7 @@ namespace VelozientComputers.Core.Services
             existingComputer.Specifications = updatedComputer.Specifications;
             existingComputer.ImageUrl = updatedComputer.ImageUrl;
 
-            _computerRepository.Update(existingComputer);
+            await _computerRepository.UpdateAsync(existingComputer);
             return existingComputer;
         }
 
@@ -119,7 +119,7 @@ namespace VelozientComputers.Core.Services
             }
 
             computer.StatusAssignments.Add(statusAssignment);
-            _computerRepository.Update(computer);
+            await _computerRepository.UpdateAsync(computer);
 
             return computer;
         }
@@ -133,7 +133,7 @@ namespace VelozientComputers.Core.Services
                 throw new KeyNotFoundException("Computer not found");
             }
 
-            _computerRepository.Remove(computer);
+            await _computerRepository.RemoveAsync(computer);
         }
 
         /// <inheritdoc/>
