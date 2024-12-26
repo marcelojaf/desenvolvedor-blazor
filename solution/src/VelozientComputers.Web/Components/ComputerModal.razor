@@ -126,27 +126,23 @@
     private string errorMessage = "";
 
     /// <summary>
-    /// Controls whether the form should maintain its state on modal close.
+    /// Indicates whether the form has an error state.
     /// </summary>
     private bool hasError;
 
     /// <summary>
-    /// Initializes or resets the form model when parameters change.
+    /// Initializes or updates the form model when parameters change.
     /// </summary>
     protected override void OnParametersSet()
     {
-        if (hasError)
-        {
-            return;
-        }
-
         if (!IsVisible)
-        {
-            ResetForm();
             return;
-        }
 
-        InitializeForm();
+        // Só inicializa o formulário quando não tem dados ou quando é uma nova edição
+        if (string.IsNullOrEmpty(computerModel.SerialNumber) || (!hasError && Computer != null))
+        {
+            InitializeForm();
+        }
     }
 
     /// <summary>
@@ -177,16 +173,9 @@
                 };
         }
 
-        DismissError();
-    }
-
-    /// <summary>
-    /// Resets the form to its initial state.
-    /// </summary>
-    private void ResetForm()
-    {
-        computerModel = new();
-        DismissError();
+        hasError = false;
+        showError = false;
+        errorMessage = "";
     }
 
     /// <summary>
@@ -195,7 +184,8 @@
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleValidSubmit()
     {
-        DismissError();
+        showError = false;
+        errorMessage = "";
 
         try
         {
@@ -232,23 +222,15 @@
     }
 
     /// <summary>
-    /// Dismisses the error message.
-    /// </summary>
-    private void DismissError()
-    {
-        showError = false;
-        hasError = false;
-        errorMessage = "";
-    }
-
-    /// <summary>
     /// Closes the modal and notifies the parent component.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task CloseModal()
     {
         hasError = false;
-        DismissError();
+        computerModel = new();
+        showError = false;
+        errorMessage = "";
         await IsVisibleChanged.InvokeAsync(false);
     }
 

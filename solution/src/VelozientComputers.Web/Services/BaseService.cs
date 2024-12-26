@@ -98,6 +98,7 @@ namespace VelozientComputers.Web.Services
         protected virtual async Task<ApiResponse<T>> HandleResponseAsync<T>(HttpResponseMessage response)
         {
             var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"API Response: {content}");
 
             if (!response.IsSuccessStatusCode)
             {

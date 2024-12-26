@@ -333,7 +333,7 @@
                 catch (HttpRequestException ex)
                 {
                     args.SetError(ex.Message);
-                    return; // Importante: previne que o modal feche
+                    return;
                 }
             }
             else
@@ -361,14 +361,7 @@
         }
         catch (Exception ex)
         {
-            if (ex is HttpRequestException httpEx)
-            {
-                args.SetError(httpEx.Message);
-            }
-            else
-            {
-                args.SetError("An unexpected error occurred. Please try again.");
-            }
+            args.SetError("An unexpected error occurred. Please try again.");
         }
         finally
         {
