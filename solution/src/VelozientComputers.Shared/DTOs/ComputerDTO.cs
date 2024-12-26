@@ -1,4 +1,7 @@
-﻿namespace VelozientComputers.Shared.DTOs
+﻿using VelozientComputers.Core.Enums;
+using VelozientComputers.Core.Extensions;
+
+namespace VelozientComputers.Shared.DTOs
 {
     /// <summary>
     /// Data transfer object for computer operations
@@ -23,7 +26,12 @@
         /// <summary>
         /// Gets or sets the computer current status
         /// </summary>
-        public string Status { get; set; }
+        public ComputerStatusEnum Status { get; set; }
+
+        /// <summary>
+        /// Gets the formatted display name for the status
+        /// </summary>
+        public string StatusDisplayName => Status.ToDisplayName();
 
         /// <summary>
         /// Gets or sets the computer purchase date

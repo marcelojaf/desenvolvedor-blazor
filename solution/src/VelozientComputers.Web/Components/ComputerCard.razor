@@ -28,10 +28,13 @@
                             <strong>Manufacturer:</strong> @Computer.Manufacturer
                         </div>
                         <div class="mb-2">
-                            <strong>Status:</strong> @Computer.Status
+                            <strong>Status:</strong> @Computer.StatusDisplayName
                         </div>
                         <div>
-                            <strong>Specifications:</strong> @Computer.Specifications
+                            <strong>Specifications:</strong>
+                            <div class="specifications-container">
+                                @((MarkupString)FormatSpecifications(Computer.Specifications))
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -81,18 +84,38 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Gets or sets the computer data to be displayed in the card.
+    /// </summary>
     [Parameter]
     public ComputerDTO Computer { get; set; }
 
+    /// <summary>
+    /// Callback event triggered when the assign button is clicked.
+    /// </summary>
     [Parameter]
     public EventCallback<ComputerDTO> OnAssign { get; set; }
 
+    /// <summary>
+    /// Callback event triggered when the edit button is clicked.
+    /// </summary>
     [Parameter]
     public EventCallback<ComputerDTO> OnEdit { get; set; }
 
+    /// <summary>
+    /// Callback event triggered when the delete button is clicked.
+    /// </summary>
     [Parameter]
     public EventCallback<ComputerDTO> OnDelete { get; set; }
 
+    /// <summary>
+    /// Determines the appropriate CSS class for the warranty status display based on expiration date.
+    /// </summary>
+    /// <returns>
+    /// Returns "text-danger" if warranty has expired,
+    /// "text-warning" if warranty expires within 30 days,
+    /// "text-success" otherwise.
+    /// </returns>
     private string GetWarrantyClass()
     {
         var daysUntilExpiration = (Computer.WarrantyExpirationDate - DateTime.Now).TotalDays;
@@ -104,18 +127,43 @@
         return "text-success";
     }
 
+    /// <summary>
+    /// Handles the click event of the assign button.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task OnAssignClick()
     {
         await OnAssign.InvokeAsync(Computer);
     }
 
+    /// <summary>
+    /// Handles the click event of the edit button.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task OnEditClick()
     {
         await OnEdit.InvokeAsync(Computer);
     }
 
+    /// <summary>
+    /// Handles the click event of the delete button.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task OnDeleteClick()
     {
         await OnDelete.InvokeAsync(Computer);
+    }
+
+    /// <summary>
+    /// Formats the computer specifications string by replacing HTML break tags with styled div elements.
+    /// </summary>
+    /// <param name="specs">The raw specifications string containing HTML break tags.</param>
+    /// <returns>A formatted HTML string with styled div elements for spacing.</returns>
+    private string FormatSpecifications(string specs)
+    {
+        if (string.IsNullOrEmpty(specs))
+            return "";
+
+        return specs.Replace("<br>", "<div class='py-1'>");
     }
 }

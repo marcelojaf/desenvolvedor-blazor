@@ -1,0 +1,19 @@
+﻿.page-container {
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.content-container {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+.computers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}

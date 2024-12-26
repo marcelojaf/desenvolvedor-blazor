@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using VelozientComputers.Core.Entities;
+using VelozientComputers.Core.Extensions;
 using VelozientComputers.Shared.DTOs;
 
 namespace VelozientComputers.Api.Configurations
@@ -24,7 +25,7 @@ namespace VelozientComputers.Api.Configurations
                     dest => dest.Status,
                     opt => opt.MapFrom(src => src.StatusAssignments
                         .OrderByDescending(sa => sa.AssignDate)
-                        .FirstOrDefault().Status.LocalizedName))
+                        .FirstOrDefault().Status.LocalizedName.ToComputerStatusEnum()))
                 .ForMember(
                     dest => dest.CurrentAssignment,
                     opt => opt.MapFrom(src => src.UserAssignments

@@ -1,5 +1,7 @@
 ﻿@using VelozientComputers.Shared.DTOs
 @using System.ComponentModel.DataAnnotations
+@using VelozientComputers.Core.Enums
+@using VelozientComputers.Core.Extensions
 
 <div class="modal @(IsVisible ? "d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-lg">
@@ -39,11 +41,10 @@
                             <label class="form-label">Status</label>
                             <InputSelect class="form-select" @bind-Value="computerModel.Status">
                                 <option value="">Select status...</option>
-                                <option value="New">New</option>
-                                <option value="In Use">In Use</option>
-                                <option value="Available">Available</option>
-                                <option value="In Maintenance">In Maintenance</option>
-                                <option value="Retired">Retired</option>
+                                @foreach (ComputerStatusEnum status in Enum.GetValues(typeof(ComputerStatusEnum)))
+                                {
+                                    <option value="@status">@status.ToDisplayName()</option>
+                                }
                             </InputSelect>
                             <ValidationMessage For="@(() => computerModel.Status)" />
                         </div>
@@ -83,21 +84,36 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Gets or sets whether the modal is visible.
+    /// </summary>
     [Parameter]
     public bool IsVisible { get; set; }
 
+    /// <summary>
+    /// Gets or sets the computer being edited, null for create mode.
+    /// </summary>
     [Parameter]
     public ComputerDTO Computer { get; set; }
 
+    /// <summary>
+    /// Callback for when the modal visibility changes.
+    /// </summary>
     [Parameter]
     public EventCallback<bool> IsVisibleChanged { get; set; }
 
+    /// <summary>
+    /// Callback for when a computer is saved.
+    /// </summary>
     [Parameter]
     public EventCallback<ComputerDTO> OnSave { get; set; }
 
     private CreateComputerDTO computerModel = new();
     private string serialNumberError;
 
+    /// <summary>
+    /// Initializes or resets the form model when parameters change.
+    /// </summary>
     protected override void OnParametersSet()
     {
         if (Computer != null)
@@ -106,7 +122,7 @@
                 {
                     Manufacturer = Computer.Manufacturer,
                     SerialNumber = Computer.SerialNumber,
-                    Status = Computer.Status,
+                    Status = Computer.Status.ToString(),
                     PurchaseDate = Computer.PurchaseDate,
                     WarrantyExpiryDate = Computer.WarrantyExpirationDate,
                     Specifications = Computer.Specifications,
@@ -118,11 +134,16 @@
             computerModel = new CreateComputerDTO
                 {
                     PurchaseDate = DateTime.Today,
-                    WarrantyExpiryDate = DateTime.Today.AddYears(1)
+                    WarrantyExpiryDate = DateTime.Today.AddYears(1),
+                    Status = ComputerStatusEnum.New.ToString()
                 };
         }
     }
 
+    /// <summary>
+    /// Handles the form submission after validation.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleValidSubmit()
     {
         if (ValidateSerialNumber())
@@ -132,7 +153,7 @@
                     Id = Computer?.Id ?? 0,
                     Manufacturer = computerModel.Manufacturer,
                     SerialNumber = computerModel.SerialNumber,
-                    Status = computerModel.Status,
+                    Status = Enum.Parse<ComputerStatusEnum>(computerModel.Status),
                     PurchaseDate = computerModel.PurchaseDate,
                     WarrantyExpirationDate = computerModel.WarrantyExpiryDate,
                     Specifications = computerModel.Specifications,
@@ -144,6 +165,10 @@
         }
     }
 
+    /// <summary>
+    /// Validates the serial number format based on the selected manufacturer.
+    /// </summary>
+    /// <returns>True if the serial number is valid, false otherwise.</returns>
     private bool ValidateSerialNumber()
     {
         var pattern = computerModel.Manufacturer switch
@@ -171,11 +196,19 @@
         return true;
     }
 
+    /// <summary>
+    /// Closes the modal and notifies the parent component.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task CloseModal()
     {
         await IsVisibleChanged.InvokeAsync(false);
     }
 
+    /// <summary>
+    /// Handles the close button click event.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task OnClose()
     {
         await CloseModal();
