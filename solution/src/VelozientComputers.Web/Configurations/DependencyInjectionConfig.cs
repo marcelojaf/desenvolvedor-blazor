@@ -1,5 +1,6 @@
 ﻿using VelozientComputers.Web.Services;
 using VelozientComputers.Web.Services.Interfaces;
+using ISerialNumberValidationService = VelozientComputers.Core.Interfaces.Service.ISerialNumberValidationService;
 
 namespace VelozientComputers.Web.Configurations;
 
@@ -15,16 +16,19 @@ public static class DependencyInjectionConfig
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddDependencyInjection(this IServiceCollection services)
     {
-        // Register HTTP client
+        // Register HTTP client with base URL
         services.AddScoped(sp => new HttpClient
         {
-            BaseAddress = new Uri("https://localhost:7126")  // API base URL
+            BaseAddress = new Uri("https://localhost:7126")
         });
 
-        // Register services
+        // Register domain services
         services.AddScoped<IComputerService, ComputerService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAssignmentService, AssignmentService>();
+
+        // Register validation services
+        services.AddScoped<ISerialNumberValidationService, ClientSerialNumberValidationService>();
 
         return services;
     }

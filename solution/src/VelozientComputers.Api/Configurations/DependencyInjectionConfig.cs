@@ -27,6 +27,8 @@ namespace VelozientComputers.Api.Configurations
             services.AddScoped<IComputerService, ComputerService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAssignmentService, AssignmentService>();
+
+            // Register validation services
             services.AddScoped<ISerialNumberValidationService, SerialNumberValidationService>();
 
             // Register AutoMapper

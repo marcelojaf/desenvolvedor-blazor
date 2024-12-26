@@ -1,7 +1,7 @@
 ﻿@using VelozientComputers.Shared.DTOs
-@using System.ComponentModel.DataAnnotations
 @using VelozientComputers.Core.Enums
 @using VelozientComputers.Core.Extensions
+@using Microsoft.AspNetCore.Components.Forms
 
 <div class="modal @(IsVisible ? "d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-lg">
@@ -29,10 +29,6 @@
                             <label class="form-label">Serial Number</label>
                             <InputText class="form-control" @bind-Value="computerModel.SerialNumber" />
                             <ValidationMessage For="@(() => computerModel.SerialNumber)" />
-                            @if (serialNumberError != null)
-                            {
-                                <div class="text-danger">@serialNumberError</div>
-                            }
                         </div>
                     </div>
 
@@ -108,8 +104,10 @@
     [Parameter]
     public EventCallback<ComputerDTO> OnSave { get; set; }
 
+    /// <summary>
+    /// The model used for the form, using the existing CreateComputerDTO.
+    /// </summary>
     private CreateComputerDTO computerModel = new();
-    private string serialNumberError;
 
     /// <summary>
     /// Initializes or resets the form model when parameters change.
@@ -146,54 +144,20 @@
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleValidSubmit()
     {
-        if (ValidateSerialNumber())
-        {
-            var computerDTO = new ComputerDTO
-                {
-                    Id = Computer?.Id ?? 0,
-                    Manufacturer = computerModel.Manufacturer,
-                    SerialNumber = computerModel.SerialNumber,
-                    Status = Enum.Parse<ComputerStatusEnum>(computerModel.Status),
-                    PurchaseDate = computerModel.PurchaseDate,
-                    WarrantyExpirationDate = computerModel.WarrantyExpiryDate,
-                    Specifications = computerModel.Specifications,
-                    ImageUrl = computerModel.ImageUrl
-                };
+        var computerDTO = new ComputerDTO
+            {
+                Id = Computer?.Id ?? 0,
+                Manufacturer = computerModel.Manufacturer,
+                SerialNumber = computerModel.SerialNumber,
+                Status = Enum.Parse<ComputerStatusEnum>(computerModel.Status),
+                PurchaseDate = computerModel.PurchaseDate,
+                WarrantyExpirationDate = computerModel.WarrantyExpiryDate,
+                Specifications = computerModel.Specifications,
+                ImageUrl = computerModel.ImageUrl
+            };
 
-            await OnSave.InvokeAsync(computerDTO);
-            await CloseModal();
-        }
-    }
-
-    /// <summary>
-    /// Validates the serial number format based on the selected manufacturer.
-    /// </summary>
-    /// <returns>True if the serial number is valid, false otherwise.</returns>
-    private bool ValidateSerialNumber()
-    {
-        var pattern = computerModel.Manufacturer switch
-        {
-            "Apple" => @"^[A-Z]{3}[C-Z0-9][1-9C-NP-RTY][A-Z0-9]{3}[A-Z0-9]{4}$",
-            "Dell" => @"^[A-Z0-9]{7}$",
-            "HP" => @"^[A-Z0-9]{3}\d{3}[A-Z0-9]{4}$",
-            "Lenovo" => @"^\d{2}-[A-Z0-9]{5}$",
-            _ => null
-        };
-
-        if (pattern == null)
-        {
-            serialNumberError = "Please select a manufacturer first";
-            return false;
-        }
-
-        if (!System.Text.RegularExpressions.Regex.IsMatch(computerModel.SerialNumber ?? "", pattern))
-        {
-            serialNumberError = "Invalid serial number format for selected manufacturer";
-            return false;
-        }
-
-        serialNumberError = null;
-        return true;
+        await OnSave.InvokeAsync(computerDTO);
+        await CloseModal();
     }
 
     /// <summary>

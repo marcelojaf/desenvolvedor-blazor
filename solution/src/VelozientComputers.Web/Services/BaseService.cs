@@ -62,6 +62,10 @@ namespace VelozientComputers.Web.Services
         public virtual async Task<TEntity> CreateAsync(TCreateDTO createDto)
         {
             var response = await _httpClient.PostAsJsonAsync(_baseUrl, createDto, _jsonOptions);
+
+            var json = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(json);
+
             var apiResponse = await HandleResponseAsync<TEntity>(response);
             return apiResponse.Data;
         }
