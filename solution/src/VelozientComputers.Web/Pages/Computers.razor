@@ -332,7 +332,8 @@
                 }
                 catch (HttpRequestException ex)
                 {
-                    args.SetError("Failed to save computer. Please check your input and try again.");
+                    args.SetError(ex.Message);
+                    return; // Importante: previne que o modal feche
                 }
             }
             else
@@ -353,13 +354,21 @@
                 }
                 catch (HttpRequestException ex)
                 {
-                    args.SetError("Failed to update computer. Please try again.");
+                    args.SetError(ex.Message);
+                    return;
                 }
             }
         }
         catch (Exception ex)
         {
-            args.SetError("An unexpected error occurred. Please try again.");
+            if (ex is HttpRequestException httpEx)
+            {
+                args.SetError(httpEx.Message);
+            }
+            else
+            {
+                args.SetError("An unexpected error occurred. Please try again.");
+            }
         }
         finally
         {

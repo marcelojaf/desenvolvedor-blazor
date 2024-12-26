@@ -11,13 +11,10 @@
                 <button type="button" class="btn-close" @onclick="OnClose"></button>
             </div>
 
-            @if (showError)
-            {
-                <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
-                    @errorMessage
-                    <button type="button" class="btn-close" @onclick="DismissError" aria-label="Close"></button>
-                </div>
-            }
+            <AlertMessage Show="showError"
+                          Message="@errorMessage"
+                          Type="danger"
+                          ShowChanged="(show) => { showError = show; StateHasChanged(); }" />
 
             <EditForm Model="@computerModel" OnValidSubmit="HandleValidSubmit">
                 <DataAnnotationsValidator />
@@ -129,9 +126,33 @@
     private string errorMessage = "";
 
     /// <summary>
+    /// Controls whether the form should maintain its state on modal close.
+    /// </summary>
+    private bool hasError;
+
+    /// <summary>
     /// Initializes or resets the form model when parameters change.
     /// </summary>
     protected override void OnParametersSet()
+    {
+        if (hasError)
+        {
+            return;
+        }
+
+        if (!IsVisible)
+        {
+            ResetForm();
+            return;
+        }
+
+        InitializeForm();
+    }
+
+    /// <summary>
+    /// Initializes the form with data from the Computer parameter or with default values.
+    /// </summary>
+    private void InitializeForm()
     {
         if (Computer != null)
         {
@@ -156,9 +177,16 @@
                 };
         }
 
-        // Reset error state
-        showError = false;
-        errorMessage = "";
+        DismissError();
+    }
+
+    /// <summary>
+    /// Resets the form to its initial state.
+    /// </summary>
+    private void ResetForm()
+    {
+        computerModel = new();
+        DismissError();
     }
 
     /// <summary>
@@ -167,6 +195,8 @@
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleValidSubmit()
     {
+        DismissError();
+
         try
         {
             var computerDTO = new ComputerDTO
@@ -181,7 +211,6 @@
                     ImageUrl = computerModel.ImageUrl
                 };
 
-            // Pass the computer and error handler to the parent
             await OnSave.InvokeAsync((computerDTO, ShowError));
         }
         catch (Exception ex)
@@ -198,6 +227,7 @@
     {
         errorMessage = message;
         showError = true;
+        hasError = true;
         StateHasChanged();
     }
 
@@ -207,6 +237,7 @@
     private void DismissError()
     {
         showError = false;
+        hasError = false;
         errorMessage = "";
     }
 
@@ -216,6 +247,7 @@
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task CloseModal()
     {
+        hasError = false;
         DismissError();
         await IsVisibleChanged.InvokeAsync(false);
     }

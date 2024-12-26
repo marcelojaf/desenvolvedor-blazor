@@ -62,10 +62,6 @@ namespace VelozientComputers.Web.Services
         public virtual async Task<TEntity> CreateAsync(TCreateDTO createDto)
         {
             var response = await _httpClient.PostAsJsonAsync(_baseUrl, createDto, _jsonOptions);
-
-            var json = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(json);
-
             var apiResponse = await HandleResponseAsync<TEntity>(response);
             return apiResponse.Data;
         }
@@ -105,12 +101,24 @@ namespace VelozientComputers.Web.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new HttpRequestException($"API request failed with status {response.StatusCode}: {content}");
+                try
+                {
+                    var errorResponse = JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
+                    throw new HttpRequestException(errorResponse?.Message ?? "An error occurred while processing your request");
+                }
+                catch (JsonException)
+                {
+                    throw new HttpRequestException($"API request failed with status {response.StatusCode}");
+                }
             }
 
             try
             {
                 var apiResponse = JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);
+                if (!apiResponse.Success)
+                {
+                    throw new HttpRequestException(apiResponse.Message ?? "Operation failed");
+                }
                 return apiResponse ?? throw new JsonException("Failed to deserialize API response");
             }
             catch (JsonException ex)
