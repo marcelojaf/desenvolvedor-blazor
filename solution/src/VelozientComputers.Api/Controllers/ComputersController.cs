@@ -24,7 +24,10 @@ public class ComputersController : BaseController
     /// <param name="mapper">The AutoMapper instance</param>
     /// <param name="manufacturerRepository">The manufacturer repository</param>
     /// <param name="statusRepository">The status repository</param>
-    public ComputersController(IComputerService computerService, IMapper mapper, IManufacturerRepository manufacturerRepository, IStatusRepository statusRepository)
+    public ComputersController(IComputerService computerService,
+        IMapper mapper,
+        IManufacturerRepository manufacturerRepository,
+        IStatusRepository statusRepository)
     {
         _computerService = computerService;
         _mapper = mapper;
@@ -41,8 +44,7 @@ public class ComputersController : BaseController
     public async Task<IActionResult> GetAll()
     {
         var computers = await _computerService.GetAllComputersAsync();
-        var computersDto = _mapper.Map<IEnumerable<ComputerDTO>>(computers);
-        return ApiResponse(computersDto);
+        return ApiResponse(_mapper.Map<IEnumerable<ComputerDTO>>(computers));
     }
 
     /// <summary>
@@ -59,8 +61,7 @@ public class ComputersController : BaseController
         if (computer == null)
             return ApiResponse(HttpStatusCode.NotFound, $"Computer with id {id} not found");
 
-        var computerDto = _mapper.Map<ComputerDTO>(computer);
-        return ApiResponse(computerDto);
+        return ApiResponse(_mapper.Map<ComputerDTO>(computer));
     }
 
     /// <summary>
@@ -73,8 +74,7 @@ public class ComputersController : BaseController
     public async Task<IActionResult> GetComputersWithExpiringWarranty([FromQuery] int daysThreshold = 30)
     {
         var computers = await _computerService.GetComputersWithExpiringWarrantyAsync(daysThreshold);
-        var computersDto = _mapper.Map<IEnumerable<ComputerDTO>>(computers);
-        return ApiResponse(computersDto);
+        return ApiResponse(_mapper.Map<IEnumerable<ComputerDTO>>(computers));
     }
 
     /// <summary>
@@ -89,34 +89,17 @@ public class ComputersController : BaseController
     {
         try
         {
-            var manufacturer = await _manufacturerRepository.GetByNameAsync(computerDto.Manufacturer);
-            if (manufacturer == null)
-                return ApiResponse(HttpStatusCode.BadRequest, $"Manufacturer '{computerDto.Manufacturer}' not found");
-
-            var status = await _statusRepository.GetByNameAsync(computerDto.Status);
-            if (status == null)
-                return ApiResponse(HttpStatusCode.BadRequest, $"Status '{computerDto.Status}' not found");
-
-            var computer = _mapper.Map<Computer>(computerDto);
-            computer.ComputerManufacturerId = manufacturer.Id;
-
-            // Criar o status assignment
-            var statusAssignment = new ComputerStatusAssignment
-            {
-                ComputerStatusId = status.Id,
-                AssignDate = DateTime.UtcNow
-            };
-            computer.StatusAssignments = new List<ComputerStatusAssignment> { statusAssignment };
+            var (manufacturer, status) = await ValidateManufacturerAndStatus(computerDto.Manufacturer, computerDto.Status);
+            var computer = CreateComputerEntity(computerDto, manufacturer, status);
 
             var createdComputer = await _computerService.CreateComputerAsync(computer);
-            var createdComputerDto = _mapper.Map<ComputerDTO>(createdComputer);
-            return ApiResponse(createdComputerDto, HttpStatusCode.Created);
+            return ApiResponse(_mapper.Map<ComputerDTO>(createdComputer), HttpStatusCode.Created);
         }
         catch (ArgumentException ex)
         {
             return ApiResponse(HttpStatusCode.BadRequest, ex.Message);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
         {
             return ApiResponse(HttpStatusCode.BadRequest, ex.Message);
         }
@@ -140,29 +123,21 @@ public class ComputersController : BaseController
     {
         try
         {
-            var status = await _statusRepository.GetByNameAsync(computerDto.Status);
-            if (status == null)
-                return ApiResponse(HttpStatusCode.BadRequest, $"Status '{computerDto.Status}' not found");
+            var existingComputer = await _computerService.GetComputerByIdAsync(id);
+            if (existingComputer == null)
+                return ApiResponse(HttpStatusCode.NotFound, $"Computer with id {id} not found");
 
-            var computer = _mapper.Map<Computer>(computerDto);
-
-            // Criar o status assignment para o novo status
-            var statusAssignment = new ComputerStatusAssignment
-            {
-                ComputerStatusId = status.Id,
-                AssignDate = DateTime.UtcNow
-            };
-            computer.StatusAssignments = new List<ComputerStatusAssignment> { statusAssignment };
+            var (manufacturer, status) = await ValidateManufacturerAndStatus(computerDto.Manufacturer, computerDto.Status);
+            var computer = UpdateComputerEntity(computerDto, manufacturer, status, existingComputer);
 
             var updatedComputer = await _computerService.UpdateComputerAsync(id, computer);
-            var updatedComputerDto = _mapper.Map<ComputerDTO>(updatedComputer);
-            return ApiResponse(updatedComputerDto);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return ApiResponse(HttpStatusCode.NotFound, ex.Message);
+            return ApiResponse(_mapper.Map<ComputerDTO>(updatedComputer));
         }
         catch (ArgumentException ex)
+        {
+            return ApiResponse(HttpStatusCode.BadRequest, ex.Message);
+        }
+        catch (Exception ex) when (ex is KeyNotFoundException || ex is ArgumentException)
         {
             return ApiResponse(HttpStatusCode.BadRequest, ex.Message);
         }
@@ -210,4 +185,84 @@ public class ComputersController : BaseController
         var isValid = await _computerService.ValidateSerialNumberAsync(manufacturer, serialNumber);
         return ApiResponse(isValid);
     }
+
+    #region Private Methods
+
+    /// <summary>
+    /// Validates manufacturer and status existence
+    /// </summary>
+    /// <param name="manufacturerName">Name of the manufacturer</param>
+    /// <param name="statusName">Name of the status</param>
+    /// <returns>Tuple containing the manufacturer and status entities</returns>
+    private async Task<(ComputerManufacturer Manufacturer, ComputerStatus Status)> ValidateManufacturerAndStatus(
+        string manufacturerName, string statusName)
+    {
+        var manufacturer = await _manufacturerRepository.GetByNameAsync(manufacturerName);
+        if (manufacturer == null)
+            throw new ArgumentException($"Manufacturer '{manufacturerName}' not found");
+
+        var status = await _statusRepository.GetByNameAsync(statusName);
+        if (status == null)
+            throw new ArgumentException($"Status '{statusName}' not found");
+
+        return (manufacturer, status);
+    }
+
+    /// <summary>
+    /// Creates a new computer entity with status assignment
+    /// </summary>
+    /// <param name="computerDto">The computer DTO</param>
+    /// <param name="manufacturer">The manufacturer entity</param>
+    /// <param name="status">The status entity</param>
+    /// <returns>Computer entity ready for creation</returns>
+    private Computer CreateComputerEntity(CreateComputerDTO computerDto,
+        ComputerManufacturer manufacturer, ComputerStatus status)
+    {
+        var computer = _mapper.Map<Computer>(computerDto);
+        computer.ComputerManufacturerId = manufacturer.Id;
+        computer.StatusAssignments = new List<ComputerStatusAssignment>
+        {
+            new ComputerStatusAssignment
+            {
+                ComputerStatusId = status.Id,
+                AssignDate = DateTime.UtcNow
+            }
+        };
+
+        return computer;
+    }
+
+    /// <summary>
+    /// Updates a computer entity with new status assignment if needed
+    /// </summary>
+    /// <param name="computerDto">The update computer DTO</param>
+    /// <param name="manufacturer">The manufacturer entity</param>
+    /// <param name="status">The status entity</param>
+    /// <param name="existingComputer">The existing computer entity</param>
+    /// <returns>Computer entity ready for update</returns>
+    private Computer UpdateComputerEntity(UpdateComputerDTO computerDto,
+        ComputerManufacturer manufacturer, ComputerStatus status, Computer existingComputer)
+    {
+        var computer = _mapper.Map<Computer>(computerDto, opt => opt.Items["Manufacturer"] = manufacturer);
+
+        var currentStatus = existingComputer.StatusAssignments
+            .OrderByDescending(sa => sa.AssignDate)
+            .FirstOrDefault()?.Status;
+
+        if (currentStatus == null || currentStatus.Id != status.Id)
+        {
+            computer.StatusAssignments = new List<ComputerStatusAssignment>
+            {
+                new ComputerStatusAssignment
+                {
+                    ComputerStatusId = status.Id,
+                    AssignDate = DateTime.UtcNow
+                }
+            };
+        }
+
+        return computer;
+    }
+
+    #endregion
 }

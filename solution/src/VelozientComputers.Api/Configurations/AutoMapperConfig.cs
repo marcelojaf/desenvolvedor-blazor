@@ -65,26 +65,36 @@ namespace VelozientComputers.Api.Configurations
                     dest => dest.CreateDate,
                     opt => opt.Ignore())
                 .ForMember(
-                    dest => dest.ComputerManufacturerId,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.Manufacturer,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.SerialNumber,
-                    opt => opt.Ignore())
-                .ForMember(
                     dest => dest.StatusAssignments,
                     opt => opt.Ignore())
                 .ForMember(
                     dest => dest.UserAssignments,
                     opt => opt.Ignore())
                 .ForMember(
-                    dest => dest.PurchaseDate,
+                    dest => dest.Manufacturer,
                     opt => opt.Ignore())
                 .ForMember(
                     dest => dest.WarrantyExpirationDate,
-                    opt => opt.MapFrom(src => src.WarrantyExpiryDate));
+                    opt => opt.MapFrom(src => src.WarrantyExpiryDate))
+                .ForMember(
+                    dest => dest.SerialNumber,
+                    opt => opt.MapFrom(src => src.SerialNumber))
+                .ForMember(
+                    dest => dest.PurchaseDate,
+                    opt => opt.MapFrom(src => src.PurchaseDate))
+                .ForMember(
+                    dest => dest.Specifications,
+                    opt => opt.MapFrom(src => src.Specifications))
+                .ForMember(
+                    dest => dest.ImageUrl,
+                    opt => opt.MapFrom(src => src.ImageUrl))
+                .ForMember(
+                    dest => dest.ComputerManufacturerId,
+                    opt => opt.MapFrom((src, dest, _, context) =>
+                    {
+                        var manufacturer = context.Items["Manufacturer"] as ComputerManufacturer;
+                        return manufacturer?.Id ?? dest.ComputerManufacturerId;
+                    }));
 
             #endregion
 

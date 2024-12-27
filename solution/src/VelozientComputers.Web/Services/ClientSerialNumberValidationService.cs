@@ -19,4 +19,10 @@ public class ClientSerialNumberValidationService : ISerialNumberValidationServic
         var result = SerialNumberValidation.ValidateSerialNumber(serialNumber, manufacturerId);
         return Task.FromResult(result);
     }
+
+    /// <inheritdoc/>
+    public async Task<bool> IsSerialNumberUniqueAsync(string serialNumber, int? excludeComputerId = null)
+    {
+        throw new NotImplementedException("Not implemented on Web project");
+    }
 }

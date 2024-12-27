@@ -73,6 +73,12 @@ namespace VelozientComputers.Core.Services
                 throw new ArgumentException(errorMessage);
             }
 
+            var isUnique = await _serialNumberValidationService.IsSerialNumberUniqueAsync(computer.SerialNumber);
+            if (!isUnique)
+            {
+                throw new ArgumentException("Serial number must be unique");
+            }
+
             await _computerRepository.AddAsync(computer);
             return computer;
         }
@@ -95,6 +101,12 @@ namespace VelozientComputers.Core.Services
                 if (!isValid)
                 {
                     throw new ArgumentException(errorMessage);
+                }
+
+                var isUnique = await _serialNumberValidationService.IsSerialNumberUniqueAsync(updatedComputer.SerialNumber, id);
+                if (!isUnique)
+                {
+                    throw new ArgumentException("Serial number must be unique");
                 }
             }
 

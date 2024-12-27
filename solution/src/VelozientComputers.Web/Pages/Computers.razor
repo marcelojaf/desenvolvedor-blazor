@@ -178,52 +178,55 @@
     /// </summary>
     /// <param name="computer">The computer to save</param>
     /// <returns>A tuple with success flag and error message if any.</returns>
-    private async Task<(bool Success, string ErrorMessage)> SaveComputer(ComputerDTO computer)
-    {
-        try
-        {
-            loading = true;
-            if (computer.Id == 0)
-            {
-                var createDto = new CreateComputerDTO
-                    {
-                        Manufacturer = computer.Manufacturer,
-                        SerialNumber = computer.SerialNumber,
-                        Status = computer.Status.ToString(),
-                        PurchaseDate = computer.PurchaseDate,
-                        WarrantyExpiryDate = computer.WarrantyExpirationDate,
-                        Specifications = computer.Specifications,
-                        ImageUrl = computer.ImageUrl
-                    };
-                await ComputerService.CreateAsync(createDto);
-            }
-            else
-            {
-                var updateDto = new UpdateComputerDTO
-                    {
-                        Status = computer.Status.ToString(),
-                        WarrantyExpiryDate = computer.WarrantyExpirationDate,
-                        Specifications = computer.Specifications,
-                        ImageUrl = computer.ImageUrl
-                    };
-                await ComputerService.UpdateAsync(computer.Id, updateDto);
-            }
-            await LoadData();
-            return (true, null);
-        }
-        catch (HttpRequestException ex)
-        {
-            return (false, "Failed to save computer. Please check your input and try again.");
-        }
-        catch (Exception ex)
-        {
-            return (false, "An unexpected error occurred. Please try again.");
-        }
-        finally
-        {
-            loading = false;
-        }
-    }
+    // private async Task<(bool Success, string ErrorMessage)> SaveComputer(ComputerDTO computer)
+    // {
+    //     try
+    //     {
+    //         loading = true;
+    //         if (computer.Id == 0)
+    //         {
+    //             var createDto = new CreateComputerDTO
+    //                 {
+    //                     Manufacturer = computer.Manufacturer,
+    //                     SerialNumber = computer.SerialNumber,
+    //                     Status = computer.Status.ToString(),
+    //                     PurchaseDate = computer.PurchaseDate,
+    //                     WarrantyExpiryDate = computer.WarrantyExpirationDate,
+    //                     Specifications = computer.Specifications,
+    //                     ImageUrl = computer.ImageUrl
+    //                 };
+    //             await ComputerService.CreateAsync(createDto);
+    //         }
+    //         else
+    //         {
+    //             var updateDto = new UpdateComputerDTO
+    //                 {
+    //                     Manufacturer = args.Computer.Manufacturer,
+    //                     SerialNumber = args.Computer.SerialNumber,
+    //                     Status = args.Computer.Status.ToString(),
+    //                     PurchaseDate = args.Computer.PurchaseDate,
+    //                     WarrantyExpiryDate = args.Computer.WarrantyExpirationDate,
+    //                     Specifications = args.Computer.Specifications,
+    //                     ImageUrl = args.Computer.ImageUrl
+    //                 };
+    //             await ComputerService.UpdateAsync(computer.Id, updateDto);
+    //         }
+    //         await LoadData();
+    //         return (true, null);
+    //     }
+    //     catch (HttpRequestException ex)
+    //     {
+    //         return (false, "Failed to save computer. Please check your input and try again.");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         return (false, "An unexpected error occurred. Please try again.");
+    //     }
+    //     finally
+    //     {
+    //         loading = false;
+    //     }
+    // }
 
     /// <summary>
     /// Deletes a computer after confirmation
@@ -340,7 +343,10 @@
             {
                 var updateDto = new UpdateComputerDTO
                     {
+                        Manufacturer = args.Computer.Manufacturer,
+                        SerialNumber = args.Computer.SerialNumber,
                         Status = args.Computer.Status.ToString(),
+                        PurchaseDate = args.Computer.PurchaseDate,
                         WarrantyExpiryDate = args.Computer.WarrantyExpirationDate,
                         Specifications = args.Computer.Specifications,
                         ImageUrl = args.Computer.ImageUrl
