@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VelozientComputers.Infrastr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VelozientComputers.Shared", "VelozientComputers.Shared\VelozientComputers.Shared.csproj", "{1BD2C111-42A7-41FE-9E33-0AA58AABDDBA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{D99BAA41-6951-4035-8076-F3CB216515F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VelozientComputers.Core.Tests", "..\tests\VelozientComputers.Core.Tests\VelozientComputers.Core.Tests.csproj", "{D8C599D1-CA73-4F2B-9B38-96D9192051F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,8 +43,15 @@ Global
 		{1BD2C111-42A7-41FE-9E33-0AA58AABDDBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BD2C111-42A7-41FE-9E33-0AA58AABDDBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BD2C111-42A7-41FE-9E33-0AA58AABDDBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8C599D1-CA73-4F2B-9B38-96D9192051F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8C599D1-CA73-4F2B-9B38-96D9192051F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8C599D1-CA73-4F2B-9B38-96D9192051F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8C599D1-CA73-4F2B-9B38-96D9192051F0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D8C599D1-CA73-4F2B-9B38-96D9192051F0} = {D99BAA41-6951-4035-8076-F3CB216515F5}
 	EndGlobalSection
 EndGlobal
