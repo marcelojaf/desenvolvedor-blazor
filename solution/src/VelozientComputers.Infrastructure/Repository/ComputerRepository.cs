@@ -76,5 +76,20 @@ namespace VelozientComputers.Infrastructure.Repository
 
             return computers;
         }
+
+        /// <inheritdoc/>
+        public override async Task RemoveAsync(Computer entity)
+        {
+            var computer = await _dbSet
+                .Include(c => c.StatusAssignments)
+                .Include(c => c.UserAssignments)
+                .FirstOrDefaultAsync(c => c.Id == entity.Id);
+
+            if (computer != null)
+            {
+                _dbSet.Remove(computer);
+                await SaveChangesAsync();
+            }
+        }
     }
 }

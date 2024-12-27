@@ -34,7 +34,7 @@ namespace VelozientComputers.Infrastructure.Data.Mappings
             builder.HasOne(e => e.Manufacturer)
                    .WithMany(m => m.Computers)
                    .HasForeignKey(e => e.ComputerManufacturerId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
 
             // Ensure unique serial number
             builder.HasIndex(e => e.SerialNumber)
