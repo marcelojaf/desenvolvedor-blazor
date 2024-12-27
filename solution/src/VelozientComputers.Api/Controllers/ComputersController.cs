@@ -65,19 +65,6 @@ public class ComputersController : BaseController
     }
 
     /// <summary>
-    /// Gets computers with expiring warranty
-    /// </summary>
-    /// <param name="daysThreshold">Number of days threshold for warranty expiration</param>
-    /// <returns>List of computers with warranty expiring within the threshold</returns>
-    [HttpGet("expiring-warranty")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ComputerDTO>>), (int)HttpStatusCode.OK)]
-    public async Task<IActionResult> GetComputersWithExpiringWarranty([FromQuery] int daysThreshold = 30)
-    {
-        var computers = await _computerService.GetComputersWithExpiringWarrantyAsync(daysThreshold);
-        return ApiResponse(_mapper.Map<IEnumerable<ComputerDTO>>(computers));
-    }
-
-    /// <summary>
     /// Creates a new computer
     /// </summary>
     /// <param name="computerDto">The computer data</param>
